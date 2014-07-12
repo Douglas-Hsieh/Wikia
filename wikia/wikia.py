@@ -13,10 +13,33 @@ from .util import cache, stdout_encode, debug
 
 
 API_URL = 'http://en.wikia.com/api/v1'
+LANG = "en"
+SUB_WIKIA = "www"
 RATE_LIMIT = False
 RATE_LIMIT_MIN_WAIT = None
 RATE_LIMIT_LAST_CALL = None
 USER_AGENT = 'wikia (https://github.com/Timidger/Wikia/)'
+
+
+def update_url():
+  '''
+  The base API_URL is updated based on the global variable
+  '''
+  global API_URL
+  global SUB_WIKIA
+  global LANG
+  
+  API_URL = 'http://{lang}.{sub_wikia}.wikia.com/api/v1'.format(
+            lang=LANG, sub_wikia=SUB_WIKIA)    
+
+
+def set_subwikia(subwikia):
+  '''
+  Sets the new subwikia, which will govern all future queries
+  '''
+  global SUB_WIKIA
+  SUB_WIKIA = subwikia.lower()
+  update_url()
 
 
 def set_lang(prefix):
@@ -28,8 +51,10 @@ def set_lang(prefix):
 
   .. note:: Make sure you search for page titles in the language that you have set.
   '''
-  global API_URL
-  API_URL = 'http://' + prefix.lower() + 'wikia.com/api/v1'
+  global LANG
+
+  LANG = prefix.lower()
+  update_url()
 
   for cached_func in (search, suggest, summary):
     cached_func.clear_cache()

@@ -1,69 +1,62 @@
-Wikipedia
+Wikia
 =========
 
-.. image:: https://travis-ci.org/goldsmith/Wikipedia.png?branch=master
-  :target: https://travis-ci.org/goldsmith/Wikipedia
-.. image:: https://pypip.in/d/wikipedia/badge.png
-  :target: https://crate.io/packages/wikipedia
-.. image:: https://pypip.in/v/wikipedia/badge.png
-  :target: https://crate.io/packages/wikipedia
-.. image:: https://pypip.in/license/wikipedia/badge.png
-    :target: https://pypi.python.org/pypi/wikipedia/
-    :alt: License
+**Wikia** is a Python library that makes it easy to access and parse
+data from any `wikia website <https://www.wikia.com>`
 
-**Wikipedia** is a Python library that makes it easy to access and parse
-data from Wikipedia.
+Search a wikia, get article summaries, get data like links and images
+from a page, and more. Wikipedia wraps the `Wikia API
+<http://api.wikia.com/wiki/Wikia_API_Wiki>`__ so you can focus on using
+wikia data, not getting it.
 
-Search Wikipedia, get article summaries, get data like links and images
-from a page, and more. Wikipedia wraps the `MediaWiki
-API <https://www.mediawiki.org/wiki/API>`__ so you can focus on using
-Wikipedia data, not getting it.
+
 
 .. code:: python
 
-  >>> import wikipedia
-  >>> print wikipedia.summary("Wikipedia")
-  # Wikipedia (/ˌwɪkɨˈpiːdiə/ or /ˌwɪkiˈpiːdiə/ WIK-i-PEE-dee-ə) is a collaboratively edited, multilingual, free Internet encyclopedia supported by the non-profit Wikimedia Foundation...
+  >>> import wikia
+  >>> wikia.set_wiki("Runescape")
+  >>> print wikia.summary("Banshee")
+  # Banshees are Slayer monsters that require level 15 Slayer to kill. They frequently drop 13 noted pure essence, making them an alternative source of essence. Additionally, banshees tend to frequently drop many different types of herbs. Mighty banshees are a higher-levelled alternative, if this is given as your Slayer assignment. 
 
-  >>> wikipedia.search("Barack")
-  # [u'Barak (given name)', u'Barack Obama', u'Barack (brandy)', u'Presidency of Barack Obama', u'Family of Barack Obama', u'First inauguration of Barack Obama', u'Barack Obama presidential campaign, 2008', u'Barack Obama, Sr.', u'Barack Obama citizenship conspiracy theories', u'Presidential transition of Barack Obama']
+  >>> wikia.search("Forest")
+  # [u'Forest', u'Forester', u'Freaky Forester', u'Forester\'s Arms', u'Talking Forest', u'Jungle Forester', u'Dense forest', u'Forester hat', u'Ogre forester hat', u'Forester (Burgh de Rott Ramble)']
 
-  >>> ny = wikipedia.page("New York")
-  >>> ny.title
-  # u'New York'
-  >>> ny.url
-  # u'http://en.wikipedia.org/wiki/New_York'
-  >>> ny.content
-  # u'New York is a state in the Northeastern region of the United States. New York is the 27th-most exten'...
-  >>> ny.links[0]
-  # u'1790 United States Census'
+  >>> drakan = wikia.page("Castle Drakan")
+  >>> drakan.title
+  # u'Castle Drakan'
+  >>> drakan.url
+  # u'http://runescape.wikia.com/wiki/Castle_Drakan'
+  >>> drakan.content
+  # u'Castle Drakan is the home of Lord Drakan, the vampyre lord of Morytania. Found just north of Meiyerditch, it looms over the Sanguinesti region'...
+  >>> drakan.links[0]
+  # u'Lord Drakan'
 
-  >>> wikipedia.set_lang("fr")
-  >>> wikipedia.summary("Facebook", sentences=1)
-  # Facebook est un service de réseautage social en ligne sur Internet permettant d'y publier des informations (photographies, liens, textes, etc.) en contrôlant leur visibilité par différentes catégories de personnes.
+  >>> wikia.set_lang("nl") # Dutch
+  >>> wikipedia.summary("Runes", sentences=1)
+  # Runes, of Magische runes zijn kleine gewichtloze steentjes waarmee spelers een spreuk kunnen uitvoeren.
 
-Note: this library was designed for ease of use and simplicity, not for advanced use. If you plan on doing serious scraping or automated requests, please use `Pywikipediabot <http://www.mediawiki.org/wiki/Manual:Pywikipediabot>`__ (or one of the other more advanced `Python MediaWiki API wrappers <http://en.wikipedia.org/wiki/Wikipedia:Creating_a_bot#Python>`__), which has a larger API, rate limiting, and other features so we can be considerate of the MediaWiki infrastructure.
+Note: this library was designed for ease of use and simplicity, not for advanced use.
 
 Installation
 ------------
 
-To install Wikipedia, simply run:
+To install Wikia, simply run:
 
 ::
 
-  $ pip install wikipedia
+  $ pip install wikia
 
-Wikipedia is compatible with Python 2.6+ (2.7+ to run unittest discover) and Python 3.3+.
+Wikia is compatible with Python 2.6+ (2.7+ to run unittest discover) and Python 3.3+.
 
 Documentation
 -------------
 
-Read the docs at https://wikipedia.readthedocs.org/en/latest/.
+Read the docs at http://api.wikia.com/wiki/Wikia_API_Wiki.
 
--  `Quickstart <https://wikipedia.readthedocs.org/en/latest/quickstart.html>`__
--  `Full API <https://wikipedia.readthedocs.org/en/latest/code.html>`__
+-  `Quickstart http://api.wikia.com/wiki/Quick_Start`__
+-  `Full API http://www.wikia.com/api/v1/`__
 
-To run tests, clone the `respository on GitHub <https://github.com/goldsmith/Wikipedia>`__, then run:
+To run tests, clone the `respository on GitHub <https://github.com/timidger/Wikia>`__, then run:
 
 ::
 
@@ -85,7 +78,7 @@ License
 -------
 
 MIT licensed. See the `LICENSE
-file <https://github.com/goldsmith/Wikipedia/blob/master/LICENSE>`__ for
+file <https://github.com/Timidger/Wikiaa/blob/master/LICENSE>`__ for
 full details.
 
 Credits
@@ -97,10 +90,7 @@ Credits
 -  The `Wikimedia
    Foundation <http://wikimediafoundation.org/wiki/Home>`__ for giving
    the world free access to data
-
-
-
-.. image:: https://d2weczhvl823v0.cloudfront.net/goldsmith/wikipedia/trend.png
-   :alt: Bitdeli badge
-   :target: https://bitdeli.com/free
+-  @goldsmith for making such a fantastic library to fork
+-  /u/captainmeta4 for giving the idea for a reddit bot to post game wiki info 
+   like auto-wiki bot
 

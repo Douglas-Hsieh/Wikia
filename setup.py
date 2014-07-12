@@ -18,26 +18,24 @@ install_reqs = [
 
 version = re.search(
   "^__version__ = \((\d+), (\d+), (\d+)\)$",
-  local_file('wikipedia/__init__.py').read(),
+  local_file('wikia/__init__.py').read(),
   re.MULTILINE
 ).groups()
 
 
 setuptools.setup(
-  name = "wikipedia",
+  name = "wikia",
   version = '.'.join(version),
-  author = "Jonathan Goldsmith",
-  author_email = "jhghank@gmail.com",
-  description = "Wikipedia API for Python",
+  author = "Preston Carpenter",
+  author_email = "APragmaticPlace@gmail.com",
+  description = "Wikia API for Python",
   license = "MIT",
   keywords = "python wikipedia API",
-  url = "https://github.com/goldsmith/Wikipedia",
+  url = "https://github.com/Timidger/Wikia",
   install_requires = install_reqs,
-  packages = ['wikipedia'],
+  packages = ['wikia'],
   long_description = local_file('README.rst').read(),
   classifiers = [
-    'Development Status :: 4 - Beta',
-    'Topic :: Software Development :: Libraries',
     'License :: OSI Approved :: MIT License',
     'Programming Language :: Python',
     'Programming Language :: Python :: 3'

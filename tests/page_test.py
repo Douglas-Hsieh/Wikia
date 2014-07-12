@@ -2,93 +2,72 @@
 from decimal import Decimal
 import unittest
 
-from wikipedia import wikipedia
+from wikia import wikia
 from request_mock_data import mock_data
 
 
 # mock out _wiki_request
 def _wiki_request(params):
   return mock_data["_wiki_request calls"][tuple(sorted(params.items()))]
-wikipedia._wiki_request = _wiki_request
+wikia._wiki_request = _wiki_request
 
 
 class TestPageSetUp(unittest.TestCase):
-  """Test the functionality of wikipedia.page's __init__ and load functions."""
+  """Test the functionality of wikia.page's __init__ and load functions."""
 
   def test_missing(self):
     """Test that page raises a PageError for a nonexistant page."""
     # Callicarpa?
-    purpleberry = lambda: wikipedia.page("purpleberry", auto_suggest=False)
-    self.assertRaises(wikipedia.PageError, purpleberry)
+    purpleberry = lambda: wikia.page("purpleberry")
+    self.assertRaises(wikia.PageError, purpleberry)
 
   def test_redirect_true(self):
     """Test that a page successfully redirects a query."""
     # no error should be raised if redirect is test_redirect_true
-    mp = wikipedia.page("Menlo Park, New Jersey")
+    mp = wikia.page("Menlo Park, New Jersey")
 
     self.assertEqual(mp.title, "Edison, New Jersey")
-    self.assertEqual(mp.url, "http://en.wikipedia.org/wiki/Edison,_New_Jersey")
+    self.assertEqual(mp.url, "http://en.wikia.org/wiki/Edison,_New_Jersey")
 
   def test_redirect_false(self):
     """Test that page raises an error on a redirect when redirect == False."""
-    mp = lambda: wikipedia.page("Menlo Park, New Jersey", auto_suggest=False, redirect=False)
-    self.assertRaises(wikipedia.RedirectError, mp)
+    mp = lambda: wikia.page("Menlo Park, New Jersey", redirect=False)
+    self.assertRaises(wikia.RedirectError, mp)
 
   def test_redirect_no_normalization(self):
     """Test that a page with redirects but no normalization query loads correctly"""
-    the_party = wikipedia.page("Communist Party", auto_suggest=False)
-    self.assertIsInstance(the_party, wikipedia.WikipediaPage)
+    the_party = wikia.page("Communist Party")
+    self.assertIsInstance(the_party, wikia.WikiaPage)
     self.assertEqual(the_party.title, "Communist party")
 
   def test_redirect_with_normalization(self):
     """Test that a page redirect with a normalized query loads correctly"""
-    the_party = wikipedia.page("communist Party", auto_suggest=False)
-    self.assertIsInstance(the_party, wikipedia.WikipediaPage)
+    the_party = wikia.page("communist Party")
+    self.assertIsInstance(the_party, wikia.WikiaPage)
     self.assertEqual(the_party.title, "Communist party")
 
   def test_redirect_normalization(self):
     """Test that a page redirect loads correctly with or without a query normalization"""
-    capital_party = wikipedia.page("Communist Party", auto_suggest=False)
-    lower_party = wikipedia.page("communist Party", auto_suggest=False)
+    capital_party = wikia.page("Communist Party")
+    lower_party = wikia.page("communist Party")
 
-    self.assertIsInstance(capital_party, wikipedia.WikipediaPage)
-    self.assertIsInstance(lower_party, wikipedia.WikipediaPage)
+    self.assertIsInstance(capital_party, wikia.WikiaPage)
+    self.assertIsInstance(lower_party, wikia.WikiaPage)
     self.assertEqual(capital_party.title, "Communist party")
     self.assertEqual(capital_party, lower_party)
 
-  def test_disambiguate(self):
-    """Test that page raises an error when a disambiguation page is reached."""
-    try:
-      ram = wikipedia.page("Dodge Ram (disambiguation)", auto_suggest=False, redirect=False)
-      error_raised = False
-    except wikipedia.DisambiguationError as e:
-      error_raised = True
-      options = e.options
-
-    self.assertTrue(error_raised)
-    self.assertEqual(options, [u'Dodge Ramcharger', u'Dodge Ram Van', u'Dodge Mini Ram', u'Dodge Caravan C/V', u'Dodge Caravan C/V', u'Ram C/V', u'Dodge Ram 50', u'Dodge D-Series', u'Dodge Rampage', u'Ram (brand)'])
-
-  def test_auto_suggest(self):
-    """Test that auto_suggest properly corrects a typo."""
-    # yum, butter.
-    butterfly = wikipedia.page("butteryfly")
-
-    self.assertEqual(butterfly.title, "Butterfly")
-    self.assertEqual(butterfly.url, "http://en.wikipedia.org/wiki/Butterfly")
-
-
 class TestPage(unittest.TestCase):
-  """Test the functionality of the rest of wikipedia.page."""
+  """Test the functionality of the rest of wikia.page."""
 
   def setUp(self):
-    # shortest wikipedia articles with images and sections
-    self.celtuce = wikipedia.page("Celtuce")
-    self.cyclone = wikipedia.page("Tropical Depression Ten (2005)")
-    self.great_wall_of_china = wikipedia.page("Great Wall of China")
+    # shortest wikia articles with images and sections
+    self.celtuce = wikia.page("Celtuce")
+    self.cyclone = wikia.page("Tropical Depression Ten (2005)")
+    self.great_wall_of_china = wikia.page("Great Wall of China")
 
   def test_from_page_id(self):
     """Test loading from a page id"""
-    self.assertEqual(self.celtuce, wikipedia.page(pageid=1868108))
+    self.assertEqual(self.celtuce, wikia.page(pageid=1868108))
 
   def test_title(self):
     """Test the title."""
@@ -97,8 +76,8 @@ class TestPage(unittest.TestCase):
 
   def test_url(self):
     """Test the url."""
-    self.assertEqual(self.celtuce.url, "http://en.wikipedia.org/wiki/Celtuce")
-    self.assertEqual(self.cyclone.url, "http://en.wikipedia.org/wiki/Tropical_Depression_Ten_(2005)")
+    self.assertEqual(self.celtuce.url, "http://en.wikia.org/wiki/Celtuce")
+    self.assertEqual(self.cyclone.url, "http://en.wikia.org/wiki/Tropical_Depression_Ten_(2005)")
 
   def test_content(self):
     """Test the plain text content."""
@@ -132,7 +111,7 @@ class TestPage(unittest.TestCase):
     self.assertEqual(self.cyclone.references, mock_data['data']["cyclone.references"])
 
   def test_links(self):
-    """Test the list of titles of links to Wikipedia pages."""
+    """Test the list of titles of links to Wikia pages."""
     self.assertEqual(self.celtuce.links, mock_data['data']["celtuce.links"])
     self.assertEqual(self.cyclone.links, mock_data['data']["cyclone.links"])
 

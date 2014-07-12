@@ -115,17 +115,15 @@ def search(query, results=10):
   '''
   global LANG
 
-  action_url = "Search/CrossWiki?"
   search_params = {
+    'action': 'Search/CrossWiki?',
     'lang': LANG,
     'srprop': '',
     'limit': results,
     'query': query
   }
-  if suggestion:
-    search_params['srinfo'] = 'suggestion'
 
-  raw_results = _wiki_request(search_params, action_url)
+  raw_results = _wiki_request(search_params)
 
   if 'error' in raw_results:
     if raw_results['error']['info'] in ('HTTP request timed out.', 'Pool queue is full'):
@@ -637,7 +635,7 @@ def donate():
   webbrowser.open('https://donate.wikimedia.org/w/index.php?title=Special:FundraiserLandingPage', new=2)
 
 
-def _wiki_request(params, action):
+def _wiki_request(params):
   '''
   Make a request to the Wikia API using the given search parameters.
   Returns a parsed dict of the JSON response.
@@ -645,7 +643,7 @@ def _wiki_request(params, action):
   global RATE_LIMIT_LAST_CALL
   global USER_AGENT
   # Such as .../Search
-  api_url = API_URL + action
+  api_url = API_URL + params['action']
 
   params['format'] = 'json'
   if not 'action' in params:

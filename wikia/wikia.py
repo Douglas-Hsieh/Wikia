@@ -56,7 +56,7 @@ def set_lang(prefix):
   LANG = prefix.lower()
   update_url()
 
-  for cached_func in (search, suggest, summary):
+  for cached_func in (search, summary):
     cached_func.clear_cache()
 
 

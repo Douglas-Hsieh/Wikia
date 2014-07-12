@@ -113,17 +113,19 @@ def search(query, results=10):
 
   * results - the maxmimum number of results returned
   '''
+  global LANG
+
+  action_url = "Search/CrossWiki?"
   search_params = {
-    'list': 'search',
+    'lang': LANG,
     'srprop': '',
-    'srlimit': results,
     'limit': results,
-    'srsearch': query
+    'query': query
   }
   if suggestion:
     search_params['srinfo'] = 'suggestion'
 
-  raw_results = _wiki_request(search_params)
+  raw_results = _wiki_request(search_params, action_url)
 
   if 'error' in raw_results:
     if raw_results['error']['info'] in ('HTTP request timed out.', 'Pool queue is full'):
@@ -179,7 +181,7 @@ def summary(title, sentences=0, chars=0, auto_suggest=True, redirect=True):
 
   # use auto_suggest and redirect to get the correct article
   # also, use page's error checking to raise DisambiguationError if necessary
-  page_info = page(title, auto_suggest=auto_suggest, redirect=redirect)
+  page_info = page(title, redirect=redirect)
   title = page_info.title
   pageid = page_info.pageid
 
@@ -202,7 +204,7 @@ def summary(title, sentences=0, chars=0, auto_suggest=True, redirect=True):
   return summary
 
 
-def page(title=None, pageid=None, auto_suggest=True, redirect=True, preload=False):
+def page(title=None, pageid=None, redirect=True, preload=False):
   '''
   Get a WikiaPage object for the page with title `title` or the pageid
   `pageid` (mutually exclusive).
@@ -211,19 +213,11 @@ def page(title=None, pageid=None, auto_suggest=True, redirect=True, preload=Fals
 
   * title - the title of the page to load
   * pageid - the numeric pageid of the page to load
-  * auto_suggest - let Wikia find a valid page title for the query
   * redirect - allow redirection without raising RedirectError
   * preload - load content, summary, images, references, and links during initialization
   '''
 
   if title is not None:
-    if auto_suggest:
-      results, suggestion = search(title, results=1, suggestion=True)
-      try:
-        title = suggestion or results[0]
-      except IndexError:
-        # if there is no suggestion or search results, the page doesn't exist
-        raise PageError(title)
     return WikiaPage(title, redirect=redirect, preload=preload)
   elif pageid is not None:
     return WikiaPage(pageid=pageid, preload=preload)
@@ -643,13 +637,15 @@ def donate():
   webbrowser.open('https://donate.wikimedia.org/w/index.php?title=Special:FundraiserLandingPage', new=2)
 
 
-def _wiki_request(params):
+def _wiki_request(params, action):
   '''
   Make a request to the Wikia API using the given search parameters.
   Returns a parsed dict of the JSON response.
   '''
   global RATE_LIMIT_LAST_CALL
   global USER_AGENT
+  # Such as .../Search
+  api_url = API_URL + action
 
   params['format'] = 'json'
   if not 'action' in params:
@@ -668,7 +664,7 @@ def _wiki_request(params):
     wait_time = (RATE_LIMIT_LAST_CALL + RATE_LIMIT_MIN_WAIT) - datetime.now()
     time.sleep(int(wait_time.total_seconds()))
 
-  r = requests.get(API_URL, params=params, headers=headers)
+  r = requests.get(api_url, params=params, headers=headers)
 
   if RATE_LIMIT:
     RATE_LIMIT_LAST_CALL = datetime.now()

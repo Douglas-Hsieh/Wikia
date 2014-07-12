@@ -80,16 +80,14 @@ def set_rate_limiting(rate_limit, min_wait=timedelta(milliseconds=50)):
 
 
 @cache
-def search(query, results=10, suggestion=False):
+def search(query, results=10):
   '''
   Do a Wikia search for `query`.
 
   Keyword arguments:
 
   * results - the maxmimum number of results returned
-  * suggestion - if True, return results and suggestion (if any) in a tuple
   '''
-
   search_params = {
     'list': 'search',
     'srprop': '',
@@ -110,79 +108,7 @@ def search(query, results=10, suggestion=False):
 
   search_results = (d['title'] for d in raw_results['query']['search'])
 
-  if suggestion:
-    if raw_results['query'].get('searchinfo'):
-      return list(search_results), raw_results['query']['searchinfo']['suggestion']
-    else:
-      return list(search_results), None
-
   return list(search_results)
-
-
-@cache
-def geosearch(latitude, longitude, title=None, results=10, radius=1000):
-  '''
-  Do a wikia geo search for `latitude` and `longitude`
-  using HTTP API described in http://www.mediawiki.org/wiki/Extension:GeoData
-
-  Arguments:
-
-  * latitude (float or decimal.Decimal)
-  * longitude (float or decimal.Decimal)
-
-  Keyword arguments:
-
-  * title - The title of an article to search for
-  * results - the maximum number of results returned
-  * radius - Search radius in meters. The value must be between 10 and 10000
-  '''
-
-  search_params = {
-    'list': 'geosearch',
-    'gsradius': radius,
-    'gscoord': '{0}|{1}'.format(latitude, longitude),
-    'gslimit': results
-  }
-  if title:
-    search_params['titles'] = title
-
-  raw_results = _wiki_request(search_params)
-
-  if 'error' in raw_results:
-    if raw_results['error']['info'] in ('HTTP request timed out.', 'Pool queue is full'):
-      raise HTTPTimeoutError('{0}|{1}'.format(latitude, longitude))
-    else:
-      raise WikiaException(raw_results['error']['info'])
-
-  search_pages = raw_results['query'].get('pages', None)
-  if search_pages:
-    search_results = (v['title'] for k, v in search_pages.items() if k != '-1')
-  else:
-    search_results = (d['title'] for d in raw_results['query']['geosearch'])
-
-  return list(search_results)
-
-
-@cache
-def suggest(query):
-  '''
-  Get a Wikia search suggestion for `query`.
-  Returns a string or None if no suggestion was found.
-  '''
-
-  search_params = {
-    'list': 'search',
-    'srinfo': 'suggestion',
-    'srprop': '',
-  }
-  search_params['srsearch'] = query
-
-  raw_result = _wiki_request(search_params)
-
-  if raw_result['query'].get('searchinfo'):
-    return raw_result['query']['searchinfo']['suggestion']
-
-  return None
 
 
 def random(pages=1):

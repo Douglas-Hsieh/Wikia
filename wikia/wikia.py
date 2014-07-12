@@ -8,28 +8,28 @@ from decimal import Decimal
 
 from .exceptions import (
   PageError, DisambiguationError, RedirectError, HTTPTimeoutError,
-  WikipediaException, ODD_ERROR_MESSAGE)
+  WikiaException, ODD_ERROR_MESSAGE)
 from .util import cache, stdout_encode, debug
 
 
-API_URL = 'http://en.wikipedia.org/w/api.php'
+API_URL = 'http://en.wikia.com/api/v1'
 RATE_LIMIT = False
 RATE_LIMIT_MIN_WAIT = None
 RATE_LIMIT_LAST_CALL = None
-USER_AGENT = 'wikipedia (https://github.com/goldsmith/Wikipedia/)'
+USER_AGENT = 'wikia (https://github.com/Timidger/Wikia/)'
 
 
 def set_lang(prefix):
   '''
   Change the language of the API being requested.
-  Set `prefix` to one of the two letter prefixes found on the `list of all Wikipedias <http://meta.wikimedia.org/wiki/List_of_Wikipedias>`_.
+  Set `prefix` to one of the two letter prefixes found on the `list of all Wikias <http://meta.wikimedia.org/wiki/List_of_Wikias>`_.
 
   After setting the language, the cache for ``search``, ``suggest``, and ``summary`` will be cleared.
 
   .. note:: Make sure you search for page titles in the language that you have set.
   '''
   global API_URL
-  API_URL = 'http://' + prefix.lower() + '.wikipedia.org/w/api.php'
+  API_URL = 'http://' + prefix.lower() + 'wikia.com/api/v1'
 
   for cached_func in (search, suggest, summary):
     cached_func.clear_cache()
@@ -49,10 +49,10 @@ def set_user_agent(user_agent_string):
 
 def set_rate_limiting(rate_limit, min_wait=timedelta(milliseconds=50)):
   '''
-  Enable or disable rate limiting on requests to the Mediawiki servers.
+  Enable or disable rate limiting on requests to the wikia servers.
   If rate limiting is not enabled, under some circumstances (depending on
-  load on Wikipedia, the number of requests you and other `wikipedia` users
-  are making, and other factors), Wikipedia may return an HTTP timeout error.
+  load on Wikia, the number of requests you and other `wikia` users
+  are making, and other factors), Wikia may return an HTTP timeout error.
 
   Enabling rate limiting generally prevents that issue, but please note that
   HTTPTimeoutError still might be raised.
@@ -82,7 +82,7 @@ def set_rate_limiting(rate_limit, min_wait=timedelta(milliseconds=50)):
 @cache
 def search(query, results=10, suggestion=False):
   '''
-  Do a Wikipedia search for `query`.
+  Do a Wikia search for `query`.
 
   Keyword arguments:
 
@@ -106,7 +106,7 @@ def search(query, results=10, suggestion=False):
     if raw_results['error']['info'] in ('HTTP request timed out.', 'Pool queue is full'):
       raise HTTPTimeoutError(query)
     else:
-      raise WikipediaException(raw_results['error']['info'])
+      raise WikiaException(raw_results['error']['info'])
 
   search_results = (d['title'] for d in raw_results['query']['search'])
 
@@ -122,7 +122,7 @@ def search(query, results=10, suggestion=False):
 @cache
 def geosearch(latitude, longitude, title=None, results=10, radius=1000):
   '''
-  Do a wikipedia geo search for `latitude` and `longitude`
+  Do a wikia geo search for `latitude` and `longitude`
   using HTTP API described in http://www.mediawiki.org/wiki/Extension:GeoData
 
   Arguments:
@@ -152,7 +152,7 @@ def geosearch(latitude, longitude, title=None, results=10, radius=1000):
     if raw_results['error']['info'] in ('HTTP request timed out.', 'Pool queue is full'):
       raise HTTPTimeoutError('{0}|{1}'.format(latitude, longitude))
     else:
-      raise WikipediaException(raw_results['error']['info'])
+      raise WikiaException(raw_results['error']['info'])
 
   search_pages = raw_results['query'].get('pages', None)
   if search_pages:
@@ -166,7 +166,7 @@ def geosearch(latitude, longitude, title=None, results=10, radius=1000):
 @cache
 def suggest(query):
   '''
-  Get a Wikipedia search suggestion for `query`.
+  Get a Wikia search suggestion for `query`.
   Returns a string or None if no suggestion was found.
   '''
 
@@ -187,15 +187,15 @@ def suggest(query):
 
 def random(pages=1):
   '''
-  Get a list of random Wikipedia article titles.
+  Get a list of random Wikia article titles.
 
-  .. note:: Random only gets articles from namespace 0, meaning no Category, User talk, or other meta-Wikipedia pages.
+  .. note:: Random only gets articles from namespace 0, meaning no Category, User talk, or other meta-Wikia pages.
 
   Keyword arguments:
 
   * pages - the number of random pages returned (max of 10)
   '''
-  #http://en.wikipedia.org/w/api.php?action=query&list=random&rnlimit=5000&format=jsonfm
+  #http://en.wikia.org/w/api.php?action=query&list=random&rnlimit=5000&format=jsonfm
   query_params = {
     'list': 'random',
     'rnnamespace': 0,
@@ -222,7 +222,7 @@ def summary(title, sentences=0, chars=0, auto_suggest=True, redirect=True):
 
   * sentences - if set, return the first `sentences` sentences (can be no greater than 10).
   * chars - if set, return only the first `chars` characters (actual text returned may be slightly longer).
-  * auto_suggest - let Wikipedia find a valid page title for the query
+  * auto_suggest - let Wikia find a valid page title for the query
   * redirect - allow redirection without raising RedirectError
   '''
 
@@ -253,14 +253,14 @@ def summary(title, sentences=0, chars=0, auto_suggest=True, redirect=True):
 
 def page(title=None, pageid=None, auto_suggest=True, redirect=True, preload=False):
   '''
-  Get a WikipediaPage object for the page with title `title` or the pageid
+  Get a WikiaPage object for the page with title `title` or the pageid
   `pageid` (mutually exclusive).
 
   Keyword arguments:
 
   * title - the title of the page to load
   * pageid - the numeric pageid of the page to load
-  * auto_suggest - let Wikipedia find a valid page title for the query
+  * auto_suggest - let Wikia find a valid page title for the query
   * redirect - allow redirection without raising RedirectError
   * preload - load content, summary, images, references, and links during initialization
   '''
@@ -273,17 +273,17 @@ def page(title=None, pageid=None, auto_suggest=True, redirect=True, preload=Fals
       except IndexError:
         # if there is no suggestion or search results, the page doesn't exist
         raise PageError(title)
-    return WikipediaPage(title, redirect=redirect, preload=preload)
+    return WikiaPage(title, redirect=redirect, preload=preload)
   elif pageid is not None:
-    return WikipediaPage(pageid=pageid, preload=preload)
+    return WikiaPage(pageid=pageid, preload=preload)
   else:
     raise ValueError("Either a title or a pageid must be specified")
 
 
 
-class WikipediaPage(object):
+class WikiaPage(object):
   '''
-  Contains data from a Wikipedia page.
+  Contains data from a Wikia page.
   Uses property methods to filter data from the raw HTML.
   '''
 
@@ -303,7 +303,7 @@ class WikipediaPage(object):
         getattr(self, prop)
 
   def __repr__(self):
-    return stdout_encode(u'<WikipediaPage \'{}\'>'.format(self.title))
+    return stdout_encode(u'<WikiaPage \'{}\'>'.format(self.title))
 
   def __eq__(self, other):
     try:
@@ -317,7 +317,7 @@ class WikipediaPage(object):
 
   def __load(self, redirect=True, preload=False):
     '''
-    Load basic information from Wikipedia.
+    Load basic information from Wikia.
     Confirm that page exists and is not a disambiguation/redirect.
 
     Does not need to be called manually, should be called automatically during __init__.
@@ -487,7 +487,7 @@ class WikipediaPage(object):
     The revision ID is a number that uniquely identifies the current
     version of the page. It can be used to create the permalink or for
     other direct API calls. See `Help:Page history
-    <http://en.wikipedia.org/wiki/Wikipedia:Revision>`_ for more
+    <http://en.wikia.org/wiki/Wikia:Revision>`_ for more
     information.
     '''
 
@@ -598,9 +598,9 @@ class WikipediaPage(object):
   @property
   def links(self):
     '''
-    List of titles of Wikipedia page links on a page.
+    List of titles of Wikia page links on a page.
 
-    .. note:: Only includes articles from namespace 0, meaning no Category, User talk, or other meta-Wikipedia pages.
+    .. note:: Only includes articles from namespace 0, meaning no Category, User talk, or other meta-Wikia pages.
     '''
 
     if not getattr(self, '_links', False):
@@ -664,11 +664,11 @@ def languages():
   '''
   List all the currently supported language prefixes (usually ISO language code).
 
-  Can be inputted to `set_lang` to change the Mediawiki that `wikipedia` requests
+  Can be inputted to `set_lang` to change the Wikia that `wikia` requests
   results from.
 
   Returns: dict of <prefix>: <local_lang_name> pairs. To get just a list of prefixes,
-  use `wikipedia.languages().keys()`.
+  use `wikia.languages().keys()`.
   '''
   response = _wiki_request({
     'meta': 'siteinfo',
@@ -694,7 +694,7 @@ def donate():
 
 def _wiki_request(params):
   '''
-  Make a request to the Wikipedia API using the given search parameters.
+  Make a request to the Wikia API using the given search parameters.
   Returns a parsed dict of the JSON response.
   '''
   global RATE_LIMIT_LAST_CALL

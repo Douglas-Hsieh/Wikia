@@ -1,15 +1,15 @@
 """
-Global wikipedia exception and warning classes.
+Global wikia exception and warning classes.
 """
 
 import sys
 
 
-ODD_ERROR_MESSAGE = "This shouldn't happen. Please report on GitHub: github.com/goldsmith/Wikipedia"
+ODD_ERROR_MESSAGE = "This shouldn't happen. Please report on GitHub: github.com/goldsmith/Wikia"
 
 
-class WikipediaException(Exception):
-  """Base Wikipedia exception class."""
+class WikiaException(Exception):
+  """Base Wikia exception class."""
 
   def __init__(self, error):
     self.error = error
@@ -26,8 +26,8 @@ class WikipediaException(Exception):
       return self.__unicode__().encode('utf8')
 
 
-class PageError(WikipediaException):
-  """Exception raised when no Wikipedia matched a query."""
+class PageError(WikiaException):
+  """Exception raised when no Wikia matched a query."""
 
   def __init__(self, pageid=None, *args):
     if pageid:
@@ -42,14 +42,14 @@ class PageError(WikipediaException):
       return u"Page id \"{0}\" does not match any pages. Try another id!".format(self.pageid)
 
 
-class DisambiguationError(WikipediaException):
+class DisambiguationError(WikiaException):
   """
   Exception raised when a page resolves to a Disambiguation page.
 
   The `options` property contains a list of titles
-  of Wikipedia pages that the query may refer to.
+  of Wikia pages that the query may refer to.
 
-  .. note:: `options` does not include titles that do not link to a valid Wikipedia page.
+  .. note:: `options` does not include titles that do not link to a valid Wikia page.
   """
 
   def __init__(self, title, may_refer_to):
@@ -60,7 +60,7 @@ class DisambiguationError(WikipediaException):
     return u"\"{0}\" may refer to: \n{1}".format(self.title, '\n'.join(self.options))
 
 
-class RedirectError(WikipediaException):
+class RedirectError(WikiaException):
   """Exception raised when a page title unexpectedly resolves to a redirect."""
 
   def __init__(self, title):
@@ -70,7 +70,7 @@ class RedirectError(WikipediaException):
     return u"\"{0}\" resulted in a redirect. Set the redirect property to True to allow automatic redirects.".format(self.title)
 
 
-class HTTPTimeoutError(WikipediaException):
+class HTTPTimeoutError(WikiaException):
   """Exception raised when a request to the Mediawiki servers times out."""
 
   def __init__(self, query):

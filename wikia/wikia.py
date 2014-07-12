@@ -12,8 +12,8 @@ from .exceptions import (
 from .util import cache, stdout_encode, debug
 
 
-API_URL = 'http://en.wikia.com/api/v1'
-LANG = "en"
+API_URL = 'http://en.wikia.com/api/v1/'
+LANG = ""
 SUB_WIKIA = "www"
 RATE_LIMIT = False
 RATE_LIMIT_MIN_WAIT = None
@@ -21,41 +21,25 @@ RATE_LIMIT_LAST_CALL = None
 USER_AGENT = 'wikia (https://github.com/Timidger/Wikia/)'
 
 
-def update_url():
+def set_lang(language):
   '''
-  The base API_URL is updated based on the global variable
+  Sets the global language variable, which is sent in the params
   '''
-  global API_URL
-  global SUB_WIKIA
   global LANG
-  
-  API_URL = 'http://{lang}.{sub_wikia}.wikia.com/api/v1'.format(
-            lang=LANG, sub_wikia=SUB_WIKIA)    
-
+  LANG = language.lower()
 
 def set_subwikia(subwikia):
   '''
   Sets the new subwikia, which will govern all future queries
   '''
   global SUB_WIKIA
-  SUB_WIKIA = subwikia.lower()
-  update_url()
-
-
-def set_lang(prefix):
-  '''
-  Change the language of the API being requested.
-  Set `prefix` to one of the two letter prefixes found on the `list of all Wikias <http://meta.wikimedia.org/wiki/List_of_Wikias>`_.
-
-  After setting the language, the cache for ``search``, ``suggest``, and ``summary`` will be cleared.
-
-  .. note:: Make sure you search for page titles in the language that you have set.
-  '''
+  global API_URL
+  global SUB_WIKIA
   global LANG
-
-  LANG = prefix.lower()
-  update_url()
-
+  
+  SUB_WIKIA = subwikia.lower()
+  API_URL = 'http://{0}.wikia.com/api/v1/'.format(SUB_WIKIA)    
+  
   for cached_func in (search, summary):
     cached_func.clear_cache()
 
@@ -115,15 +99,14 @@ def search(query, results=10):
   '''
   global LANG
 
+  action_url = 'Search/List?/'
   search_params = {
-    'action': 'Search/CrossWiki?',
     'lang': LANG,
-    'srprop': '',
     'limit': results,
     'query': query
   }
 
-  raw_results = _wiki_request(search_params)
+  raw_results = _wiki_request(search_params, action_url)
 
   if 'error' in raw_results:
     if raw_results['error']['info'] in ('HTTP request timed out.', 'Pool queue is full'):
@@ -131,7 +114,7 @@ def search(query, results=10):
     else:
       raise WikiaException(raw_results['error']['info'])
 
-  search_results = (d['title'] for d in raw_results['query']['search'])
+  search_results = (d['title'] for d in raw_results['items'])
 
   return list(search_results)
 
@@ -151,6 +134,7 @@ def random(pages=1):
     'list': 'random',
     'rnnamespace': 0,
     'rnlimit': pages,
+    'lang': LANG
   }
 
   request = _wiki_request(query_params)
@@ -163,7 +147,7 @@ def random(pages=1):
 
 
 @cache
-def summary(title, sentences=0, chars=0, auto_suggest=True, redirect=True):
+def summary(title, chars=500, redirect=True):
   '''
   Plain text summary of the page.
 
@@ -171,7 +155,6 @@ def summary(title, sentences=0, chars=0, auto_suggest=True, redirect=True):
 
   Keyword arguments:
 
-  * sentences - if set, return the first `sentences` sentences (can be no greater than 10).
   * chars - if set, return only the first `chars` characters (actual text returned may be slightly longer).
   * auto_suggest - let Wikia find a valid page title for the query
   * redirect - allow redirection without raising RedirectError
@@ -179,25 +162,20 @@ def summary(title, sentences=0, chars=0, auto_suggest=True, redirect=True):
 
   # use auto_suggest and redirect to get the correct article
   # also, use page's error checking to raise DisambiguationError if necessary
+  action_url = 'Articles/Details?/'
   page_info = page(title, redirect=redirect)
   title = page_info.title
   pageid = page_info.pageid
 
   query_params = {
-    'prop': 'extracts',
-    'explaintext': '',
-    'titles': title
+    'titles': title,
+    'abstract': chars,
+    'ids': pageid,
+    'lang': LANG
   }
 
-  if sentences:
-    query_params['exsentences'] = sentences
-  elif chars:
-    query_params['exchars'] = chars
-  else:
-    query_params['exintro'] = ''
-
-  request = _wiki_request(query_params)
-  summary = request['query']['pages'][pageid]['extract']
+  request = _wiki_request(query_params, action_url)
+  summary = request['items'][str(pageid)]['abstract']
 
   return summary
 
@@ -265,22 +243,23 @@ class WikiaPage(object):
 
     Does not need to be called manually, should be called automatically during __init__.
     '''
+    action_url = 'Articles/Details?/'
     query_params = {
       'prop': 'info|pageprops',
       'inprop': 'url',
       'ppprop': 'disambiguation',
       'redirects': '',
+      'lang': LANG,
     }
     if not getattr(self, 'pageid', None):
       query_params['titles'] = self.title
     else:
-      query_params['pageids'] = self.pageid
+      query_params['ids'] = self.pageid
 
-    request = _wiki_request(query_params)
-
-    query = request['query']
-    pageid = list(query['pages'].keys())[0]
-    page = query['pages'][pageid]
+    request = _wiki_request(query_params, action_url)
+    query = list(request['items'].values())[0]
+    pageid = query['id']
+    page = query
 
     # missing is present if the page is missing
     if 'missing' in page:
@@ -320,7 +299,8 @@ class WikiaPage(object):
         'prop': 'revisions',
         'rvprop': 'content',
         'rvparse': '',
-        'rvlimit': 1
+        'rvlimit': 1,
+        'lang': LANG,
       }
       if hasattr(self, 'pageid'):
         query_params['pageids'] = self.pageid
@@ -338,7 +318,7 @@ class WikiaPage(object):
     else:
       self.pageid = pageid
       self.title = page['title']
-      self.url = page['fullurl']
+      self.url = page['url']
 
   def __continued_query(self, query_params):
     '''
@@ -391,7 +371,8 @@ class WikiaPage(object):
         'rvprop': 'content',
         'rvlimit': 1,
         'rvparse': '',
-        'titles': self.title
+        'titles': self.title,
+        'lang': LANG,
       }
 
       request = _wiki_request(query_params)
@@ -409,7 +390,8 @@ class WikiaPage(object):
       query_params = {
         'prop': 'extracts|revisions',
         'explaintext': '',
-        'rvprop': 'ids'
+        'rvprop': 'ids',
+        'lang': LANG
       }
       if not getattr(self, 'title', None) is None:
          query_params['titles'] = self.title
@@ -464,6 +446,7 @@ class WikiaPage(object):
         'prop': 'extracts',
         'explaintext': '',
         'exintro': '',
+        'lang': LANG
       }
       if not getattr(self, 'title', None) is None:
          query_params['titles'] = self.title
@@ -635,7 +618,7 @@ def donate():
   webbrowser.open('https://donate.wikimedia.org/w/index.php?title=Special:FundraiserLandingPage', new=2)
 
 
-def _wiki_request(params):
+def _wiki_request(params, action):
   '''
   Make a request to the Wikia API using the given search parameters.
   Returns a parsed dict of the JSON response.
@@ -643,11 +626,9 @@ def _wiki_request(params):
   global RATE_LIMIT_LAST_CALL
   global USER_AGENT
   # Such as .../Search
-  api_url = API_URL + params['action']
+  api_url = API_URL + action
 
   params['format'] = 'json'
-  if not 'action' in params:
-    params['action'] = 'query'
 
   headers = {
     'User-Agent': USER_AGENT

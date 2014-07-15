@@ -12,9 +12,8 @@ from .exceptions import (
 from .util import cache, stdout_encode, debug
 
 
-API_URL = 'http://en.wikia.com/api/v1/'
+API_URL = 'http://{lang}{sub_wikia}.wikia.com/api/v1/{action}'
 LANG = ""
-SUB_WIKIA = "www"
 RATE_LIMIT = False
 RATE_LIMIT_MIN_WAIT = None
 RATE_LIMIT_LAST_CALL = None
@@ -26,20 +25,8 @@ def set_lang(language):
   Sets the global language variable, which is sent in the params
   '''
   global LANG
-  LANG = language.lower()
+  LANG = language.lower() + '.' if language else ''
 
-def set_subwikia(subwikia):
-  '''
-  Sets the new subwikia, which will govern all future queries
-  '''
-  global SUB_WIKIA
-  global API_URL
-  global SUB_WIKIA
-  global LANG
-  
-  SUB_WIKIA = subwikia.lower()
-  API_URL = 'http://{0}.wikia.com/api/v1/'.format(SUB_WIKIA)    
-  
   for cached_func in (search, summary):
     cached_func.clear_cache()
 
@@ -89,24 +76,26 @@ def set_rate_limiting(rate_limit, min_wait=timedelta(milliseconds=50)):
 
 
 @cache
-def search(query, results=10):
+def search(query, sub_wikia, results=10):
   '''
   Do a Wikia search for `query`.
 
   Keyword arguments:
 
+  * sub_wikia - the sub wikia to search in (i.e: "runescape", "elderscrolls")
   * results - the maxmimum number of results returned
   '''
   global LANG
 
-  action_url = 'Search/List?/'
   search_params = {
+    'action': 'Search/List?/',
+    'sub_wikia': sub_wikia,
     'lang': LANG,
     'limit': results,
     'query': query
   }
 
-  raw_results = _wiki_request(search_params, action_url)
+  raw_results = _wiki_request(search_params)
 
   if 'error' in raw_results:
     if raw_results['error']['info'] in ('HTTP request timed out.', 'Pool queue is full'):
@@ -114,6 +103,7 @@ def search(query, results=10):
     else:
       raise WikiaException(raw_results['error']['info'])
 
+#  search_results = (d['title'] for d in raw_results['items'][str(pageid)]['abstract'])
   search_results = (d['title'] for d in raw_results['items'])
 
   return list(search_results)
@@ -123,13 +113,13 @@ def random(pages=1):
   '''
   Get a list of random Wikia article titles.
 
-  .. note:: Random only gets articles from namespace 0, meaning no Category, User talk, or other meta-Wikia pages.
+  .. note:: Random only gets articles from namespace 0, meaning no Category, U
 
   Keyword arguments:
 
   * pages - the number of random pages returned (max of 10)
   '''
-  #http://en.wikia.org/w/api.php?action=query&list=random&rnlimit=5000&format=jsonfm
+  #http://en.wikia.org/w/api.php?action=query&list=random&rnlimit=5000&format=
   query_params = {
     'list': 'random',
     'rnnamespace': 0,
@@ -147,42 +137,43 @@ def random(pages=1):
 
 
 @cache
-def summary(title, chars=500, redirect=True):
+def summary(title, sub_wikia, chars=500, redirect=True):
   '''
-  Plain text summary of the page.
+  Plain text summary of the page from the sub-wikia.
 
-  .. note:: This is a convenience wrapper - auto_suggest and redirect are enabled by default
+  .. note:: This is a convenience wrapper - auto_suggest and redirect are enab
 
   Keyword arguments:
 
-  * chars - if set, return only the first `chars` characters (actual text returned may be slightly longer).
+  * chars - if set, return only the first `chars` characters (actual text retu
   * auto_suggest - let Wikia find a valid page title for the query
   * redirect - allow redirection without raising RedirectError
   '''
 
   # use auto_suggest and redirect to get the correct article
   # also, use page's error checking to raise DisambiguationError if necessary
-  action_url = 'Articles/Details?/'
-  page_info = page(title, redirect=redirect)
+  page_info = page(sub_wikia, title, redirect=redirect)
   title = page_info.title
   pageid = page_info.pageid
 
   query_params = {
+    'action': 'Articles/Details?/',
+    'sub_wikia': sub_wikia,
     'titles': title,
     'abstract': chars,
     'ids': pageid,
     'lang': LANG
   }
 
-  request = _wiki_request(query_params, action_url)
+  request = _wiki_request(query_params)
   summary = request['items'][str(pageid)]['abstract']
 
   return summary
 
 
-def page(title=None, pageid=None, redirect=True, preload=False):
+def page(sub_wikia, title=None, pageid=None, redirect=True, preload=False):
   '''
-  Get a WikiaPage object for the page with title `title` or the pageid
+  Get a WikiaPage object for the page in the sub wikia with title `title` or the pageid
   `pageid` (mutually exclusive).
 
   Keyword arguments:
@@ -194,9 +185,9 @@ def page(title=None, pageid=None, redirect=True, preload=False):
   '''
 
   if title is not None:
-    return WikiaPage(title, redirect=redirect, preload=preload)
+    return WikiaPage(sub_wikia, title, redirect=redirect, preload=preload)
   elif pageid is not None:
-    return WikiaPage(pageid=pageid, preload=preload)
+    return WikiaPage(sub_wikia, pageid=pageid, preload=preload)
   else:
     raise ValueError("Either a title or a pageid must be specified")
 
@@ -208,7 +199,7 @@ class WikiaPage(object):
   Uses property methods to filter data from the raw HTML.
   '''
 
-  def __init__(self, title=None, pageid=None, redirect=True, preload=False, original_title=''):
+  def __init__(self, sub_wikia, title=None, pageid=None, redirect=True, preload=False, original_title=''):
     if title is not None:
       self.title = title
       self.original_title = original_title or title
@@ -217,6 +208,7 @@ class WikiaPage(object):
     else:
       raise ValueError("Either a title or a pageid must be specified")
 
+    self.sub_wikia = sub_wikia
     self.__load(redirect=redirect, preload=preload)
 
     if preload:
@@ -243,8 +235,9 @@ class WikiaPage(object):
 
     Does not need to be called manually, should be called automatically during __init__.
     '''
-    action_url = 'Articles/Details?/'
     query_params = {
+      'sub_wikia': self.sub_wikia,
+      'action': 'Articles/Details?/',
       'prop': 'info|pageprops',
       'inprop': 'url',
       'ppprop': 'disambiguation',
@@ -256,7 +249,8 @@ class WikiaPage(object):
     else:
       query_params['ids'] = self.pageid
 
-    request = _wiki_request(query_params, action_url)
+    request = _wiki_request(query_params)
+    print(request)
     query = list(request['items'].values())[0]
     pageid = query['id']
     page = query
@@ -618,18 +612,19 @@ def donate():
   webbrowser.open('https://donate.wikimedia.org/w/index.php?title=Special:FundraiserLandingPage', new=2)
 
 
-def _wiki_request(params, action):
+def _wiki_request(params):
   '''
   Make a request to the Wikia API using the given search parameters.
   Returns a parsed dict of the JSON response.
   '''
   global RATE_LIMIT_LAST_CALL
   global USER_AGENT
+  #params.update({"lang": LANG})
   # Such as .../Search
-  api_url = API_URL + action
-
+  api_url = API_URL.format(**params)
+  print(api_url)  
   params['format'] = 'json'
-
+  print(params)
   headers = {
     'User-Agent': USER_AGENT
   }

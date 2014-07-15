@@ -250,7 +250,6 @@ class WikiaPage(object):
       query_params['ids'] = self.pageid
 
     request = _wiki_request(query_params)
-    print(request)
     query = list(request['items'].values())[0]
     pageid = query['id']
     page = query
@@ -622,9 +621,7 @@ def _wiki_request(params):
   #params.update({"lang": LANG})
   # Such as .../Search
   api_url = API_URL.format(**params)
-  print(api_url)  
   params['format'] = 'json'
-  print(params)
   headers = {
     'User-Agent': USER_AGENT
   }

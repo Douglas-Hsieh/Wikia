@@ -13,6 +13,7 @@ from .util import cache, stdout_encode, debug
 
 
 API_URL = 'http://{lang}{sub_wikia}.wikia.com/api/v1/{action}'
+STANDARD_URL = 'http://{lang}{sub_wikia}.wikia.com/wiki/{page}'
 LANG = ""
 RATE_LIMIT = False
 RATE_LIMIT_MIN_WAIT = None
@@ -315,8 +316,9 @@ class WikiaPage(object):
 
     else:
       self.pageid = pageid
-      self.title = page['title']
-      self.url = page['url']
+      self.title = page['title'].lower()
+      lang = query_params['lang']
+      self.url = STANDARD_URL.format(lang=lang, sub_wikia=self.sub_wikia, page=self.title)
 
   def __continued_query(self, query_params):
     '''

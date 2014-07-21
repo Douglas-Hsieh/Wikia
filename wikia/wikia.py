@@ -103,9 +103,11 @@ def search(query, sub_wikia, results=10):
     else:
       raise WikiaException(raw_results['error']['info'])
 
-#  search_results = (d['title'] for d in raw_results['items'][str(pageid)]['abstract'])
-  search_results = (d['title'] for d in raw_results['items'])
-
+  try:
+      search_results = (d['title'] for d in raw_results['items'])
+  except KeyError as e:
+      raise WikiaError("Could not locate page \"{}\" in subwikia \"{}\"".format(query,
+                                                                            sub_wikia))     
   return list(search_results)
 
 
@@ -209,8 +211,11 @@ class WikiaPage(object):
       raise ValueError("Either a title or a pageid must be specified")
 
     self.sub_wikia = sub_wikia
-    self.__load(redirect=redirect, preload=preload)
-
+    try:
+        self.__load(redirect=redirect, preload=preload)
+    except AttributeError as e:
+        raise WikiaError("Could not locate page \"{}\" in subwikia \"{}\"".format(title or pageid,
+                                                                           sub_wikia))
     if preload:
       for prop in ('content', 'summary', 'images', 'references', 'links', 'sections'):
         getattr(self, prop)
@@ -641,3 +646,7 @@ def _wiki_request(params):
     RATE_LIMIT_LAST_CALL = datetime.now()
 
   return r.json()
+
+
+class WikiaError(Exception):
+    pass

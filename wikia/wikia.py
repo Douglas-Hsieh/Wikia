@@ -163,6 +163,7 @@ def summary(title, sub_wikia, chars=500, redirect=True):
     'action': 'Articles/Details?/',
     'sub_wikia': sub_wikia,
     'titles': title,
+    'query': title,
     'abstract': chars,
     'ids': pageid,
     'lang': LANG
@@ -443,10 +444,13 @@ class WikiaPage(object):
 
     if not getattr(self, '_summary', False):
       query_params = {
+        'query': self.title,
+        'action': 'Articles/Details?/',
         'prop': 'extracts',
         'explaintext': '',
         'exintro': '',
-        'lang': LANG
+        'lang': LANG,
+        'sub_wikia': self.sub_wikia,
       }
       if not getattr(self, 'title', None) is None:
          query_params['titles'] = self.title
@@ -549,7 +553,7 @@ class WikiaPage(object):
 
     if not getattr(self, '_sections', False):
       query_params = {
-        'action': 'parse',
+        'action': 'Search/List?/',
         'prop': 'sections',
       }
       query_params.update(self.__title_query_param)

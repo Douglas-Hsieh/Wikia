@@ -234,8 +234,8 @@ class WikiaPage(object):
     Does not need to be called manually, should be called automatically during __init__.
     '''
     query_params = {
-      'sub_wikia': self.sub_wikia,
       'action': 'Articles/Details?/',
+      'sub_wikia': self.sub_wikia,
       'redirects': '',
       'lang': LANG,
     }
@@ -374,9 +374,9 @@ class WikiaPage(object):
 
     if not getattr(self, '_content', False):
       query_params = {
+        'action': "Articles/AsSimpleJson?/",
         'id': self.pageid,
         'sub_wikia': self.sub_wikia,
-        'action': "Articles/AsSimpleJson?/",
         'lang': LANG
       }
       if not getattr(self, 'title', None) is None:
@@ -429,8 +429,8 @@ class WikiaPage(object):
 
     if not getattr(self, '_summary', False):
       query_params = {
-        'query': self.title,
         'action': 'Articles/Details?/',
+        'query': self.title,
         'lang': LANG,
         'sub_wikia': self.sub_wikia,
       }

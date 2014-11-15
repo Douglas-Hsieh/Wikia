@@ -455,27 +455,6 @@ class WikiaPage(object):
     return self._images
 
   @property
-  def references(self):
-    '''
-    List of URLs of external links on a page.
-    May include external links within page that aren't technically cited anywhere.
-    '''
-
-    if not getattr(self, '_references', False):
-      def add_protocol(url):
-        return url if url.startswith('http') else 'http:' + url
-
-      self._references = [
-        add_protocol(link['*'])
-        for link in self.__continued_query({
-          'prop': 'extlinks',
-          'ellimit': 'max'
-        })
-      ]
-
-    return self._references
-
-  @property
   def sections(self):
     '''
     List of section titles from the table of contents on the page.

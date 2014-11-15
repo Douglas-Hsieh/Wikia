@@ -582,17 +582,10 @@ def _wiki_request(params):
   r = r.json()
 
   if "exception" in r:
-    error_code = r['exception']['code']
-    if error_code  == 400:
-      raise WikiaError("Query parameter is missing or namespaces parameter "
-                       "is not numeric!")
-    elif error_code == 404:
-      raise WikiaError("No results found!")
-    elif error_code == 408:
+    message, error_code, details = r['exception'].values()
+    if error_code == 408:
       raise HTTPTimeoutError(query)
-    else:
-      raise WikiaError(" ".join(r['exception']['details'],
-                                r['exception']['message']))
+    raise WikiaError("Error ({}) {}: {} ".format(error_code, message, details))
   return r
 
 

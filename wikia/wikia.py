@@ -455,6 +455,25 @@ class WikiaPage(object):
     return self._images
 
   @property
+  def related_pages(self):
+    '''
+    Lists up to 10 of the wikia URLs of pages related to this page.
+    '''
+    if not getattr(self, "_related_pages", False):
+      query_params = {
+        'action': "RelatedPages/List?/",
+        'ids': self.pageid,
+        'limit': 10,
+        'sub_wikia': self.sub_wikia,
+        'lang': LANG,
+      }
+      request = _wiki_request(query_params)
+      self._related_pages = [request['basepath'] + url['url']
+                            for url in request['items'][str(self.pageid)]]
+
+    return self._related_pages
+
+  @property
   def sections(self):
     '''
     List of section titles from the table of contents on the page.

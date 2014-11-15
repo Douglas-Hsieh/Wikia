@@ -257,7 +257,12 @@ class WikiaPage(object):
     else:
       query_params['ids'] = self.pageid
 
-    request = _wiki_request(query_params)
+    try:
+        request = _wiki_request(query_params)
+    except IndexError:
+        raise WikiaError("Could not find page \"{}\""
+                         "of the sub-wikia {}".format(self.title or self.pageid,
+                                                      self.sub_wikia))
     query = list(request['items'].values())[0]
     pageid = query['id']
     page = query

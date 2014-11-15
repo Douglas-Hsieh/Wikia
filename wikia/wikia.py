@@ -368,9 +368,9 @@ class WikiaPage(object):
   @property
   def content(self):
     '''
-    Plain text content of the page, excluding images, tables, and other data.
+    Plain text content of each section of the page, excluding images, tables,
+    and other data.
     '''
-
     if not getattr(self, '_content', False):
       # First get the plaintext summary
       query_params = {
@@ -380,19 +380,14 @@ class WikiaPage(object):
         'sub_wikia': self.sub_wikia,
         'lang': LANG
       }
-      if not getattr(self, 'title', None) is None:
-         query_params['titles'] = self.title
-      else:
-         query_params['pageids'] = self.pageid
+
       request = _wiki_request(query_params)
       self._content = "\n".join(segment['text'] for section in request['sections']
                                                 for segment in section['content']
                                                 if segment['type'] == "paragraph")
-
       # Then get the revision id
       query_params['action'] = "Articles/Details?/"
       request = _wiki_request(query_params)
-      print(request)
       self._revision_id = request['items'][str(self.pageid)]['revision']['id']
 
     return self._content

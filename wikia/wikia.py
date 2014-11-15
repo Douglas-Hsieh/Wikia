@@ -489,28 +489,6 @@ class WikiaPage(object):
     return self._images
 
   @property
-  def coordinates(self):
-    '''
-    Tuple of Decimals in the form of (lat, lon) or None
-    '''
-    if not getattr(self, '_coordinates', False):
-      query_params = {
-        'prop': 'coordinates',
-        'colimit': 'max',
-        'titles': self.title,
-      }
-
-      request = _wiki_request(query_params)
-
-      if 'query' in request:
-        coordinates = request['query']['pages'][self.pageid]['coordinates']
-        self._coordinates = (Decimal(coordinates[0]['lat']), Decimal(coordinates[0]['lon']))
-      else:
-        self._coordinates = None
-
-    return self._coordinates
-
-  @property
   def references(self):
     '''
     List of URLs of external links on a page.

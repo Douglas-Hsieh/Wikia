@@ -376,6 +376,7 @@ class WikiaPage(object):
       query_params = {
         'action': "Articles/AsSimpleJson?/",
         'id': self.pageid,
+        'ids': self.pageid, # Because for some reason the API uses both "id" and "ids"
         'sub_wikia': self.sub_wikia,
         'lang': LANG
       }
@@ -391,6 +392,7 @@ class WikiaPage(object):
       # Then get the revision id
       query_params['action'] = "Articles/Details?/"
       request = _wiki_request(query_params)
+      print(request)
       self._revision_id = request['items'][str(self.pageid)]['revision']['id']
 
     return self._content

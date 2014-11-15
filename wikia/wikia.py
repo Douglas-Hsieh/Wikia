@@ -395,6 +395,8 @@ class WikiaPage(object):
 
     if not getattr(self, '_content', False):
       query_params = {
+        'sub_wikia': self.sub_wikia,
+        'action': "Articles/AsSimpleJson?/",
         'prop': 'extracts|revisions',
         'explaintext': '',
         'rvprop': 'ids',

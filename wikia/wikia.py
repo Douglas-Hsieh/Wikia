@@ -576,6 +576,9 @@ def _wiki_request(params):
 
   if RATE_LIMIT:
     RATE_LIMIT_LAST_CALL = datetime.now()
+
+  r = r.json()
+
   if "exception" in r:
     error_code = r['exception']['code']
     if error_code  == 400:
@@ -588,7 +591,7 @@ def _wiki_request(params):
     else:
       raise WikiaError(" ".join(r['exception']['details'],
                                 r['exception']['message']))
-  return r.json()
+  return r
 
 
 class WikiaError(Exception):

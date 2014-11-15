@@ -99,12 +99,6 @@ def search(query, sub_wikia, results=10):
 
   raw_results = _wiki_request(search_params)
 
-  if 'error' in raw_results:
-    if raw_results['error']['info'] in ('HTTP request timed out.', 'Pool queue is full'):
-      raise HTTPTimeoutError(query)
-    else:
-      raise WikiaException(raw_results['error']['info'])
-
   try:
       search_results = (d['title'] for d in raw_results['items'])
   except KeyError as e:
@@ -636,7 +630,18 @@ def _wiki_request(params):
 
   if RATE_LIMIT:
     RATE_LIMIT_LAST_CALL = datetime.now()
-
+  if "exception" in r:
+    error_code = r['exception']['code']
+    if error_code  == 400:
+      raise WikiaError("Query parameter is missing or namespaces parameter "
+                       "is not numeric!")
+    elif error_code == 404:
+      raise WikiaError("No results found!")
+    elif error_code == 408:
+      raise HTTPTimeoutError(query)
+    else:
+      raise WikiaError(" ".join(r['exception']['details'],
+                                r['exception']['message']))
   return r.json()
 
 

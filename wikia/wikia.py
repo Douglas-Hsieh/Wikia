@@ -155,8 +155,8 @@ def summary(title, sub_wikia, chars=500, redirect=True):
     'action': 'Articles/Details?/',
     'sub_wikia': sub_wikia,
     'titles': title,
-    'abstract': chars,
     'ids': pageid,
+    'abstract': chars,
     'lang': LANG
   }
 
@@ -236,7 +236,6 @@ class WikiaPage(object):
     query_params = {
       'action': 'Articles/Details?/',
       'sub_wikia': self.sub_wikia,
-      'redirects': '',
       'lang': LANG,
     }
     if not getattr(self, 'pageid', None):
@@ -373,6 +372,7 @@ class WikiaPage(object):
     '''
 
     if not getattr(self, '_content', False):
+      # First get the plaintext summary
       query_params = {
         'action': "Articles/AsSimpleJson?/",
         'id': self.pageid,
@@ -384,9 +384,14 @@ class WikiaPage(object):
       else:
          query_params['pageids'] = self.pageid
       request = _wiki_request(query_params)
-      self._content     = request['query']['pages'][self.pageid]['extract']
-      self._revision_id = request['query']['pages'][self.pageid]['revisions'][0]['revid']
-      self._parent_id   = request['query']['pages'][self.pageid]['revisions'][0]['parentid']
+      self._content = "\n".join(segment['text'] for section in request['sections']
+                                                for segment in section['content']
+                                                if segment['type'] == "paragraph")
+
+      # Then get the revision id
+      query_params['action'] = "Articles/Details?/"
+      request = _wiki_request(query_params)
+      self._revision_id = request['items'][str(self.pageid)]['revision']['id']
 
     return self._content
 
@@ -409,19 +414,6 @@ class WikiaPage(object):
     return self._revision_id
 
   @property
-  def parent_id(self):
-    '''
-    Revision ID of the parent version of the current revision of this
-    page. See ``revision_id`` for more information.
-    '''
-
-    if not getattr(self, '_parentid', False):
-      # fetch the content (side effect is loading the revid)
-      self.content
-
-    return self._parent_id
-
-  @property
   def summary(self):
     '''
     Plain text summary of the page.
@@ -431,8 +423,8 @@ class WikiaPage(object):
       query_params = {
         'action': 'Articles/Details?/',
         'query': self.title,
-        'lang': LANG,
         'sub_wikia': self.sub_wikia,
+        'lang': LANG,
       }
       if not getattr(self, 'title', None) is None:
          query_params['titles'] = self.title
@@ -514,7 +506,6 @@ class WikiaPage(object):
     if not getattr(self, '_sections', False):
       query_params = {
         'action': 'Search/List?/',
-        'prop': 'sections',
       }
       query_params.update(self.__title_query_param)
 

@@ -481,12 +481,14 @@ class WikiaPage(object):
 
     if not getattr(self, '_sections', False):
       query_params = {
-        'action': 'Search/List?/',
+        'action': 'Articles/AsSimpleJson?/',
+        'id': self.pageid,
+        'sub_wikia': self.sub_wikia,
+        'lang': LANG,
       }
-      query_params.update(self.__title_query_param)
 
       request = _wiki_request(query_params)
-      self._sections = [section['line'] for section in request['parse']['sections']]
+      self._sections = [section['title'] for section in request['sections']]
 
     return self._sections
 

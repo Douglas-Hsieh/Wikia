@@ -119,9 +119,6 @@ def random(pages=1):
   '''
   #http://en.wikia.org/w/api.php?action=query&list=random&rnlimit=5000&format=
   query_params = {
-    'list': 'random',
-    'rnnamespace': 0,
-    'rnlimit': pages,
     'lang': LANG
   }
 
@@ -158,7 +155,6 @@ def summary(title, sub_wikia, chars=500, redirect=True):
     'action': 'Articles/Details?/',
     'sub_wikia': sub_wikia,
     'titles': title,
-    'query': title,
     'abstract': chars,
     'ids': pageid,
     'lang': LANG
@@ -240,9 +236,6 @@ class WikiaPage(object):
     query_params = {
       'sub_wikia': self.sub_wikia,
       'action': 'Articles/Details?/',
-      'prop': 'info|pageprops',
-      'inprop': 'url',
-      'ppprop': 'disambiguation',
       'redirects': '',
       'lang': LANG,
     }
@@ -296,10 +289,6 @@ class WikiaPage(object):
     # then the page must be a disambiguation page
     elif 'pageprops' in page:
       query_params = {
-        'prop': 'revisions',
-        'rvprop': 'content',
-        'rvparse': '',
-        'rvlimit': 1,
         'lang': LANG,
       }
       if hasattr(self, 'pageid'):
@@ -368,10 +357,6 @@ class WikiaPage(object):
 
     if not getattr(self, '_html', False):
       query_params = {
-        'prop': 'revisions',
-        'rvprop': 'content',
-        'rvlimit': 1,
-        'rvparse': '',
         'titles': self.title,
         'lang': LANG,
       }
@@ -389,11 +374,9 @@ class WikiaPage(object):
 
     if not getattr(self, '_content', False):
       query_params = {
+        'id': self.pageid,
         'sub_wikia': self.sub_wikia,
         'action': "Articles/AsSimpleJson?/",
-        'prop': 'extracts|revisions',
-        'explaintext': '',
-        'rvprop': 'ids',
         'lang': LANG
       }
       if not getattr(self, 'title', None) is None:
@@ -448,9 +431,6 @@ class WikiaPage(object):
       query_params = {
         'query': self.title,
         'action': 'Articles/Details?/',
-        'prop': 'extracts',
-        'explaintext': '',
-        'exintro': '',
         'lang': LANG,
         'sub_wikia': self.sub_wikia,
       }
@@ -609,8 +589,7 @@ def _wiki_request(params):
   '''
   global RATE_LIMIT_LAST_CALL
   global USER_AGENT
-  #params.update({"lang": LANG})
-  # Such as .../Search
+
   api_url = API_URL.format(**params)
   params['format'] = 'json'
   headers = {

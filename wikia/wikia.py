@@ -13,6 +13,7 @@ from .util import cache, stdout_encode, debug
 
 
 API_URL = 'http://{lang}{sub_wikia}.wikia.com/api/v1/{action}'
+# URL used when browsing the wikia proper
 STANDARD_URL = 'http://{lang}{sub_wikia}.wikia.com/wiki/{page}'
 LANG = ""
 RATE_LIMIT = False
@@ -108,7 +109,7 @@ def search(query, sub_wikia, results=10):
       search_results = (d['title'] for d in raw_results['items'])
   except KeyError as e:
       raise WikiaError("Could not locate page \"{}\" in subwikia \"{}\"".format(query,
-                                                                            sub_wikia))     
+                                                                            sub_wikia))
   return list(search_results)
 
 

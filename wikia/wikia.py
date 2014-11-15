@@ -450,7 +450,8 @@ class WikiaPage(object):
         'lang': LANG,
       }
       request = _wiki_request(query_params)
-      self._images = [section['images'][0]['src'] for section in request["sections"]]
+      self._images = [section['images'][0]['src'] for section in request["sections"]
+                     if section['images']]
 
     return self._images
 

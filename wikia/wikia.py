@@ -443,16 +443,14 @@ class WikiaPage(object):
     '''
 
     if not getattr(self, '_images', False):
-      self._images = [
-        page['imageinfo'][0]['url']
-        for page in self.__continued_query({
-          'generator': 'images',
-          'gimlimit': 'max',
-          'prop': 'imageinfo',
-          'iiprop': 'url',
-        })
-        if 'imageinfo' in page
-      ]
+      query_params = {
+        'action': "Articles/AsSimpleJson?/",
+        'id': self.pageid,
+        'sub_wikia': self.sub_wikia,
+        'lang': LANG,
+      }
+      request = _wiki_request(query_params)
+      self._images = [section['images'][0]['src'] for section in request["sections"]]
 
     return self._images
 

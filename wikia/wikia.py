@@ -476,26 +476,6 @@ class WikiaPage(object):
     return self._references
 
   @property
-  def links(self):
-    '''
-    List of titles of Wikia page links on a page.
-
-    .. note:: Only includes articles from namespace 0, meaning no Category, User talk, or other meta-Wikia pages.
-    '''
-
-    if not getattr(self, '_links', False):
-      self._links = [
-        link['title']
-        for link in self.__continued_query({
-          'prop': 'links',
-          'plnamespace': 0,
-          'pllimit': 'max'
-        })
-      ]
-
-    return self._links
-
-  @property
   def sections(self):
     '''
     List of section titles from the table of contents on the page.

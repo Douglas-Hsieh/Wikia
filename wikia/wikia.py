@@ -355,13 +355,8 @@ class WikiaPage(object):
     '''
 
     if not getattr(self, '_html', False):
-      query_params = {
-        'titles': self.title,
-        'lang': LANG,
-      }
-
-      request = _wiki_request(query_params)
-      self._html = request['query']['pages'][self.pageid]['revisions'][0]['*']
+      request = requests.get(self.url)
+      self._html = request.text
 
     return self._html
 
@@ -501,20 +496,22 @@ class WikiaPage(object):
            the full text of all of the subsections. It only gets the text between
            `section_title` and the next subheading, which is often empty.
     '''
-
-    section = u"== {} ==".format(section_title)
-    try:
-      index = self.content.index(section) + len(section)
-    except ValueError:
+    if section_title not in self.sections:
       return None
 
-    try:
-      next_index = self.content.index("==", index)
-    except ValueError:
-      next_index = len(self.content)
+    query_params = {
+      'action': "Articles/AsSimpleJson?/",
+      'id': self.pageid,
+      'sub_wikia': self.sub_wikia,
+      'lang': LANG
+    }
 
-    return self.content[index:next_index].lstrip("=").strip()
-
+    request = _wiki_request(query_params)
+    section = "\n".join(segment['text'] for section in request['sections']
+                                        if section == section_title
+                                        for segment in section['content']
+                                        if segment['type'] == "paragraph")
+    return section
 
 @cache
 def languages():

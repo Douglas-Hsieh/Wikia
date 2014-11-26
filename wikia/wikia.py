@@ -508,7 +508,7 @@ class WikiaPage(object):
 
     request = _wiki_request(query_params)
     section = "\n".join(segment['text'] for section in request['sections']
-                                        if section == section_title
+                                        if section['title'] == section_title
                                         for segment in section['content']
                                         if segment['type'] == "paragraph")
     return section

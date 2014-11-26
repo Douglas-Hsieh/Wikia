@@ -574,8 +574,15 @@ def _wiki_request(params):
   if RATE_LIMIT:
     RATE_LIMIT_LAST_CALL = datetime.now()
 
-  r = r.json()
-
+  # If getting the json representation did not work, our data is mangled
+  try:
+    r = r.json()
+  except ValueError:
+    raise WikiaError("Your request to the url \"{url}\" with the paramaters"
+                     "\"{params}\" returned data in a format other than JSON."
+                     "Please check your input data.").format(url=api_url,
+                                                             params=params)
+  # If we got a json response, then we know the format of the input was correct
   if "exception" in r:
     message, error_code, details = r['exception'].values()
     if error_code == 408:

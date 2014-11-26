@@ -584,10 +584,10 @@ def _wiki_request(params):
                                                              params=params)
   # If we got a json response, then we know the format of the input was correct
   if "exception" in r:
-    message, error_code, details = r['exception'].values()
+    details, message, error_code= r['exception'].values()
     if error_code == 408:
       raise HTTPTimeoutError(query)
-    raise WikiaError("Error ({}) {}: {} ".format(error_code, message, details))
+    raise WikiaError("{}. {} ({})".format(message, details, error_code))
   return r
 
 

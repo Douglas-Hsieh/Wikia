@@ -78,7 +78,7 @@ def set_rate_limiting(rate_limit, min_wait=timedelta(milliseconds=50)):
 
 
 @cache
-def search(query, sub_wikia, results=10):
+def search(sub_wikia, query, results=10):
   '''
   Do a Wikia search for `query`.
 
@@ -132,7 +132,7 @@ def random(pages=1):
 
 
 @cache
-def summary(title, sub_wikia, chars=500, redirect=True):
+def summary(sub_wikia, title, chars=500, redirect=True):
   '''
   Plain text summary of the page from the sub-wikia.
 
@@ -411,7 +411,7 @@ class WikiaPage(object):
     Plain text summary of the page.
     '''
     if not getattr(self, '_summary', False):
-      self._summary = summary(self.title, self.sub_wikia)
+      self._summary = summary(self.sub_wikia, self.title)
     return self._summary
 
   @property

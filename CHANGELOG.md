@@ -1,6 +1,8 @@
 # Changelog
 
 ## Current
+### Version 1.4
+* Finished conversion to the wikia API from the wikipedia API
 
 ### Version 1.3.1
 

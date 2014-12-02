@@ -140,7 +140,7 @@ def summary(title, sub_wikia, chars=500, redirect=True):
 
   Keyword arguments:
 
-  * chars - if set, return only the first `chars` characters (actual text retu
+  * chars - if set, return only the first `chars` characters (limit is 500)
   * auto_suggest - let Wikia find a valid page title for the query
   * redirect - allow redirection without raising RedirectError
   '''
@@ -410,22 +410,8 @@ class WikiaPage(object):
     '''
     Plain text summary of the page.
     '''
-
     if not getattr(self, '_summary', False):
-      query_params = {
-        'action': 'Articles/Details?/',
-        'query': self.title,
-        'sub_wikia': self.sub_wikia,
-        'lang': LANG,
-      }
-      if not getattr(self, 'title', None) is None:
-         query_params['titles'] = self.title
-      else:
-         query_params['pageids'] = self.pageid
-
-      request = _wiki_request(query_params)
-      self._summary = request['query']['pages'][self.pageid]['extract']
-
+      self._summary = summary(self.title, self.sub_wikia)
     return self._summary
 
   @property

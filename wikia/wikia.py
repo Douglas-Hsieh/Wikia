@@ -556,8 +556,8 @@ def _wiki_request(params):
   except ValueError:
     raise WikiaError("Your request to the url \"{url}\" with the paramaters"
                      "\"{params}\" returned data in a format other than JSON."
-                     "Please check your input data.").format(url=api_url,
-                                                             params=params)
+                     "Please check your input data.".format(url=api_url,
+                                                             params=params))
   # If we got a json response, then we know the format of the input was correct
   if "exception" in r:
     details, message, error_code= r['exception'].values()

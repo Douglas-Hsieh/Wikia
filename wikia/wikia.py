@@ -367,11 +367,9 @@ class WikiaPage(object):
     and other data.
     '''
     if not getattr(self, '_content', False):
-      # First get the plaintext summary
       query_params = {
         'action': "Articles/AsSimpleJson?/",
         'id': self.pageid,
-        'ids': self.pageid, # Because for some reason the API uses both "id" and "ids"
         'sub_wikia': self.sub_wikia,
         'lang': LANG
       }
@@ -380,11 +378,6 @@ class WikiaPage(object):
       self._content = "\n".join(segment['text'] for section in request['sections']
                                                 for segment in section['content']
                                                 if segment['type'] == "paragraph")
-      # Then get the revision id
-      query_params['action'] = "Articles/Details?/"
-      request = _wiki_request(query_params)
-      self._revision_id = request['items'][str(self.pageid)]['revision']['id']
-
     return self._content
 
   @property
@@ -400,8 +393,14 @@ class WikiaPage(object):
     '''
 
     if not getattr(self, '_revid', False):
-      # fetch the content (side effect is loading the revid)
-      self.content
+      query_params = {
+        'action': "Articles/Details?/",
+        'ids': self.pageid,
+        'sub_wikia': self.sub_wikia,
+        'lang': LANG
+      }
+      request = _wiki_request(query_params)
+      self._revision_id = request['items'][str(self.pageid)]['revision']['id']
 
     return self._revision_id
 

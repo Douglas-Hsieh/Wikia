@@ -509,17 +509,14 @@ def languages():
   Returns: dict of <prefix>: <local_lang_name> pairs. To get just a list of prefixes,
   use `wikia.languages().keys()`.
   '''
-  response = _wiki_request({
-    'meta': 'siteinfo',
-    'siprop': 'languages'
-  })
-
-  languages = response['query']['languages']
-
-  return {
-    lang['code']: lang['*']
-    for lang in languages
+  query_params = {
+    'action': "WAM/WAMLanguages?/",
+    'timestamp': time.time(), # Uses the UNIX timestamp to determine available LANGs
+    'sub_wikia': '',
+    'lang': LANG
   }
+  request = _wiki_request(query_params)
+  return response['languages']
 
 def _wiki_request(params):
   '''

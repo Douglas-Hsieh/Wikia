@@ -1,6 +1,8 @@
 # Changelog
 
 ## Current
+### Version 1.4.1
+* Expanded image extraction to include all images in the article
 ### Version 1.4
 * Finished conversion to the wikia API from the wikipedia API
 

@@ -2,6 +2,7 @@ from __future__ import unicode_literals
 
 import requests
 import time
+import mimetypes
 from bs4 import BeautifulSoup
 from datetime import datetime, timedelta
 from decimal import Decimal
@@ -11,7 +12,8 @@ from .exceptions import (
   WikiaException, ODD_ERROR_MESSAGE)
 from .util import cache, stdout_encode, debug
 
-
+# Generate all extensions from the OS
+mimetypes.init()
 API_URL = 'http://{lang}{sub_wikia}.wikia.com/api/v1/{action}'
 # URL used when browsing the wikia proper
 STANDARD_URL = 'http://{lang}{sub_wikia}.wikia.com/wiki/{page}'
@@ -420,16 +422,37 @@ class WikiaPage(object):
     '''
 
     if not getattr(self, '_images', False):
+      # Get the first round of images
       query_params = {
         'action': "Articles/AsSimpleJson?/",
-        'id': self.pageid,
+        'id': str(self.pageid),
         'sub_wikia': self.sub_wikia,
         'lang': LANG,
       }
       request = _wiki_request(query_params)
-      self._images = [section['images'][0]['src'] for section in request["sections"]
+      images = [section['images'][0]['src'] for section in request["sections"]
                      if section['images']]
 
+      # Get the second round of images
+      # This time, have to use a different API call
+      query_params.update({'action': "Articles/Details?/",
+                           'titles': self.title}) # This helps reduce redirects
+      request = _wiki_request(query_params)
+      images.append(request["items"][str(self.pageid)]["thumbnail"])
+
+      # A little URL manipulation is required to get the full sized version
+      # So we have to generate all the possible image extensions from mimetype
+      image_extensions = ["." + ext.split("/")[1]
+                         for ext in mimetypes.types_map.values()
+                         if ext.split("/")[0] == "image"]
+      # Remove the filler around the image url that reduces the size
+      for index, image in enumerate(images):
+        for extension in image_extensions:
+          if extension in image:
+            image = "".join(image.partition(extension)[:2])
+            images[index] = image.replace("/thumb/", "/")
+            break
+      self._images = images
     return self._images
 
   @property

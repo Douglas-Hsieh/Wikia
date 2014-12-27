@@ -252,64 +252,11 @@ class WikiaPage(object):
                          "of the sub-wikia {}".format(self.title or self.pageid,
                                                       self.sub_wikia))
     query = list(request['items'].values())[0]
-    pageid = query['id']
-    page = query
-
-    # missing is present if the page is missing
-    if 'missing' in page:
-      if hasattr(self, 'title'):
-        raise PageError(self.title)
-      else:
-        raise PageError(pageid=self.pageid)
-
-    # same thing for redirect, except it shows up in query instead of page for
-    # whatever silly reason
-    elif 'redirects' in query:
-      if redirect:
-        redirects = query['redirects'][0]
-
-        if 'normalized' in query:
-          normalized = query['normalized'][0]
-          assert normalized['from'] == self.title, ODD_ERROR_MESSAGE
-
-          from_title = normalized['to']
-
-        else:
-          from_title = self.title
-
-        assert redirects['from'] == from_title, ODD_ERROR_MESSAGE
-
-        # change the title and reload the whole object
-        self.__init__(redirects['to'], redirect=redirect, preload=preload)
-
-      else:
-        raise RedirectError(getattr(self, 'title', page['title']))
-
-    # since we only asked for disambiguation in ppprop,
-    # if a pageprop is returned,
-    # then the page must be a disambiguation page
-    elif 'pageprops' in page:
-      query_params = {
-        'lang': LANG,
-      }
-      if hasattr(self, 'pageid'):
-        query_params['pageids'] = self.pageid
-      else:
-        query_params['titles'] = self.title
-      request = _wiki_request(query_params)
-      html = request['query']['pages'][pageid]['revisions'][0]['*']
-
-      lis = BeautifulSoup(html).find_all('li')
-      filtered_lis = [li for li in lis if not 'tocsection' in ''.join(li.get('class', []))]
-      may_refer_to = [li.a.get_text() for li in filtered_lis if li.a]
-
-      raise DisambiguationError(getattr(self, 'title', page['title']), may_refer_to)
-
-    else:
-      self.pageid = pageid
-      self.title = page['title']
-      lang = query_params['lang']
-      self.url = STANDARD_URL.format(lang=lang, sub_wikia=self.sub_wikia, page=self.title)
+    self.pageid = query['id']
+    self.title = query['title']
+    lang = query_params['lang']
+    self.url = STANDARD_URL.format(lang=lang, sub_wikia=self.sub_wikia,
+                                   page=self.title)
 
   def __continued_query(self, query_params):
     '''

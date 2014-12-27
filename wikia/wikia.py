@@ -307,7 +307,7 @@ class WikiaPage(object):
 
     else:
       self.pageid = pageid
-      self.title = page['title'].lower()
+      self.title = page['title']
       lang = query_params['lang']
       self.url = STANDARD_URL.format(lang=lang, sub_wikia=self.sub_wikia, page=self.title)
 

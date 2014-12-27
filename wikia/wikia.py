@@ -435,23 +435,24 @@ class WikiaPage(object):
 
       # Get the second round of images
       # This time, have to use a different API call
-      query_params.update({'action': "Articles/Details?/",
-                           'titles': self.title}) # This helps reduce redirects
+      query_params['action'] = "Articles/Details?/"
+      query_params['titles'] = self.title # This stops redirects
       request = _wiki_request(query_params)
-      images.append(request["items"][str(self.pageid)]["thumbnail"])
+      image_thumbnail = request["items"][str(self.pageid)]["thumbnail"]
 
-      # A little URL manipulation is required to get the full sized version
-      # So we have to generate all the possible image extensions from mimetype
-      image_extensions = ["." + ext.split("/")[1]
-                         for ext in mimetypes.types_map.values()
-                         if ext.split("/")[0] == "image"]
-      # Remove the filler around the image url that reduces the size
-      for index, image in enumerate(images):
-        for extension in image_extensions:
-          if extension in image:
-            image = "".join(image.partition(extension)[:2])
-            images[index] = image.replace("/thumb/", "/")
-            break
+      # Only if there are more pictures to grab
+      if image_thumbnail:
+        images.append(image_thumbnail)
+        # A little URL manipulation is required to get the full sized version
+        for index, image in enumerate(images):
+          image_type = mimetypes.guess_type(image)[0]
+          image_type = "." + image_type.split("/")[-1]
+          # JPEG has a special case, where sometimes it is written as "jpg"
+          if image_type == ".jpeg" and image_type not in image:
+            image_type = ".jpg"
+          # Remove the filler around the image url that reduces the size
+          image = "".join(image.partition(image_type)[:2])
+          images[index] = image.replace("/thumb/", "/")
       self._images = images
     return self._images
 

@@ -392,6 +392,8 @@ class WikiaPage(object):
         images.append(image_thumbnail)
         # A little URL manipulation is required to get the full sized version
         for index, image in enumerate(images):
+          # Remove the /revision/ fluff after the image url
+          image = image.partition("/revision/")[0]
           image_type = mimetypes.guess_type(image)[0]
           image_type = "." + image_type.split("/")[-1]
           # JPEG has a special case, where sometimes it is written as "jpg"

@@ -1,6 +1,8 @@
 # Changelog
 
 ## Current
+### Version 1.4.3
+* Fixed a bug with the images, where some of them would not be retrieved properly
 ### Version 1.4.2
 * Fixed a bug with images, where JPG would not be properly formatted
 * Removed redirect/missing page code checks, because they might not be needed

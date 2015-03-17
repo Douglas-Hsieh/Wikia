@@ -60,76 +60,67 @@ class TestPage(unittest.TestCase):
   """Test the functionality of the rest of wikia.page."""
 
   def setUp(self):
-    # shortest wikia articles with images and sections
-    self.celtuce = wikia.page("Celtuce")
-    self.cyclone = wikia.page("Tropical Depression Ten (2005)")
-    self.great_wall_of_china = wikia.page("Great Wall of China")
+    # some random wikia articles with images and sections
+    self.dog = wikia.page("runescape", "Dog")
+    # This is one of the longest articles on wikia, though that might change...
+    self.palpatine = wikia.page("starwars", "Palpatine")
 
   def test_from_page_id(self):
     """Test loading from a page id"""
-    self.assertEqual(self.celtuce, wikia.page(pageid=1868108))
+    self.assertEqual(self.dog, wikia.page(pageid=26173))
 
   def test_title(self):
     """Test the title."""
-    self.assertEqual(self.celtuce.title, "Celtuce")
-    self.assertEqual(self.cyclone.title, "Tropical Depression Ten (2005)")
+    self.assertEqual(self.dog.title, "Dog")
+    self.assertEqual(self.palpatine.title, "Palpatine")
 
   def test_url(self):
     """Test the url."""
-    self.assertEqual(self.celtuce.url, "http://en.wikia.org/wiki/Celtuce")
-    self.assertEqual(self.cyclone.url, "http://en.wikia.org/wiki/Tropical_Depression_Ten_(2005)")
+    self.assertEqual(self.dog.url, "http://runescape.wikia.com/wiki/Dog")
+    self.assertEqual(self.palpatine.url, "http://en.wikia.org/wiki/Tropical_Depression_Ten_(2005)")
 
   def test_content(self):
     """Test the plain text content."""
-    self.assertEqual(self.celtuce.content, mock_data['data']["celtuce.content"])
-    self.assertEqual(self.cyclone.content, mock_data['data']["cyclone.content"])
+    self.assertEqual(self.dog.content, mock_data['data']["dog.content"])
+    self.assertEqual(self.palpatine.content, mock_data['data']["cyclone.content"])
 
   def test_revision_id(self):
     """Test the revision id."""
-    self.assertEqual(self.celtuce.revision_id, mock_data['data']["celtuce.revid"])
-    self.assertEqual(self.cyclone.revision_id, mock_data['data']["cyclone.revid"])
-
-  def test_parent_id(self):
-    """Test the parent id."""
-    self.assertEqual(self.celtuce.parent_id, mock_data['data']["celtuce.parentid"])
-    self.assertEqual(self.cyclone.parent_id, mock_data['data']["cyclone.parentid"])
-
+    self.assertEqual(self.dog.revision_id, mock_data['data']["dog.revid"])
+    self.assertEqual(self.palpatine.revision_id, mock_data['data']["cyclone.revid"])
 
   def test_summary(self):
     """Test the summary."""
-    self.assertEqual(self.celtuce.summary, mock_data['data']["celtuce.summary"])
-    self.assertEqual(self.cyclone.summary, mock_data['data']["cyclone.summary"])
+    self.assertEqual(self.dog.summary, mock_data['data']["dog.summary"])
+    self.assertEqual(self.palpatine.summary, mock_data['data']["cyclone.summary"])
 
   def test_images(self):
     """Test the list of image URLs."""
-    self.assertEqual(sorted(self.celtuce.images), mock_data['data']["celtuce.images"])
-    self.assertEqual(sorted(self.cyclone.images), mock_data['data']["cyclone.images"])
+    self.assertEqual(sorted(self.dog.images), mock_data['data']["dog.images"])
+    self.assertEqual(sorted(self.palpatine.images), mock_data['data']["cyclone.images"])
 
   def test_references(self):
     """Test the list of reference URLs."""
-    self.assertEqual(self.celtuce.references, mock_data['data']["celtuce.references"])
-    self.assertEqual(self.cyclone.references, mock_data['data']["cyclone.references"])
+    self.assertEqual(self.dog.references, mock_data['data']["dog.references"])
+    self.assertEqual(self.palpatine.references, mock_data['data']["cyclone.references"])
 
   def test_links(self):
     """Test the list of titles of links to Wikia pages."""
-    self.assertEqual(self.celtuce.links, mock_data['data']["celtuce.links"])
-    self.assertEqual(self.cyclone.links, mock_data['data']["cyclone.links"])
+    self.assertEqual(self.dog.links, mock_data['data']["dog.links"])
+    self.assertEqual(self.palpatine.links, mock_data['data']["cyclone.links"])
 
   def test_html(self):
     """Test the full HTML method."""
-    self.assertEqual(self.celtuce.html(), mock_data['data']["celtuce.html"])
+    self.assertEqual(self.dog.html(), mock_data['data']["dog.html"])
 
   def test_sections(self):
     """Test the list of section titles."""
-    self.assertEqual(sorted(self.cyclone.sections), mock_data['data']["cyclone.sections"])
+    self.assertEqual(self.dog.sections, mock_data['data']["dog.sections"])
+    self.assertEqual(sorted(self.palpatine.sections), mock_data['data']["cyclone.sections"])
 
   def test_section(self):
     """Test text content of a single section."""
-    self.assertEqual(self.cyclone.section("Impact"), mock_data['data']["cyclone.section.impact"])
-    self.assertEqual(self.cyclone.section("History"), None)
-
-  def test_coordinates(self):
-    """Test geo coordinates of a page"""
-    lat, lon = self.great_wall_of_china.coordinates
-    self.assertEqual(str(lat.quantize(Decimal('1.000'))), mock_data['data']['great_wall_of_china.coordinates.lat'])
-    self.assertEqual(str(lon.quantize(Decimal('1.000'))), mock_data['data']['great_wall_of_china.coordinates.lon'])
+    self.assertEqual(self.dog.section("Dog"), mock_data['data']["dog.section.dog"])
+    self.assertEqual(self.dog.section("Cat"), None)
+    self.assertEqual(self.palpatine.section("Impact"), mock_data['data']["cyclone.section.impact"])
+    self.assertEqual(self.palpatine.section("History"), None)

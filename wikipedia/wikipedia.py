@@ -399,7 +399,7 @@ class WikipediaPage(object):
   @property
   def __title_query_param(self):
     if getattr(self, 'title', None) is not None:
-      return {'titles': self.title}
+      return {'titles': self.title, 'page' : self.title}
     else:
       return {'pageids': self.pageid}
 

@@ -478,15 +478,15 @@ class WikipediaPage(object):
 
     if not getattr(self, '_content', False):
       query_params = {
-        'prop': 'revisions',
-        'rvprop': 'content'
+        'action': 'parse',
+        'prop': 'wikitext',
       }
       if not getattr(self, 'title', None) is None:
-         query_params['titles'] = self.title
+         query_params['page'] = self.title
       else:
-         query_params['pageids'] = self.pageid
+         query_params['pageid'] = self.pageid
       request = self._wiki_request(query_params)
-      self._content     = request['query']['pages'][self.pageid]['revisions'][0]["*"]
+      self._content     = request['parse']['wikitext']['*']
       #self._revision_id = request['query']['pages'][self.pageid]['revisions'][0]['revid']
       #self._parent_id   = request['query']['pages'][self.pageid]['revisions'][0]['parentid']
 
@@ -742,5 +742,4 @@ def _wiki_request(params, api_url):
 
   if RATE_LIMIT:
     RATE_LIMIT_LAST_CALL = datetime.now()
-
   return r.json()

@@ -11,28 +11,16 @@ from .exceptions import (
   WikipediaException, ODD_ERROR_MESSAGE)
 from .util import cache, stdout_encode, debug
 
-
-API_URL = 'http://en.wikipedia.org/w/api.php'
+API_URL = "http://{site}{lang}.gamepedia.com/api.php?"
 RATE_LIMIT = False
 RATE_LIMIT_MIN_WAIT = None
 RATE_LIMIT_LAST_CALL = None
-USER_AGENT = 'wikipedia (https://github.com/goldsmith/Wikipedia/)'
+USER_AGENT = 'gamepedia (https://github.com/timidger/Gamepedia/)'
 
 
-def set_lang(prefix):
-  '''
-  Change the language of the API being requested.
-  Set `prefix` to one of the two letter prefixes found on the `list of all Wikipedias <http://meta.wikimedia.org/wiki/List_of_Wikipedias>`_.
-
-  After setting the language, the cache for ``search``, ``suggest``, and ``summary`` will be cleared.
-
-  .. note:: Make sure you search for page titles in the language that you have set.
-  '''
-  global API_URL
-  API_URL = 'http://' + prefix.lower() + '.wikipedia.org/w/api.php'
-
-  for cached_func in (search, suggest, summary):
-    cached_func.clear_cache()
+## Change how this API works
+# Remove the global functions
+# Make this have to operate through an object
 
 
 def set_user_agent(user_agent_string):
@@ -80,27 +68,29 @@ def set_rate_limiting(rate_limit, min_wait=timedelta(milliseconds=50)):
 
 
 @cache
-def search(query, results=10, suggestion=False):
+def search(site, query, lang=None, results=10, suggestion=False):
   '''
-  Do a Wikipedia search for `query`.
+  Do a search on the gamepedia site for `query`.
 
   Keyword arguments:
 
+  * lang - The language the Gamepedia article is written in
   * results - the maxmimum number of results returned
   * suggestion - if True, return results and suggestion (if any) in a tuple
   '''
-
+  api_url = format_url(site, lang)
   search_params = {
     'list': 'search',
     'srprop': '',
     'srlimit': results,
     'limit': results,
-    'srsearch': query
+    'srsearch': query,
+    'site': site,
   }
   if suggestion:
     search_params['srinfo'] = 'suggestion'
 
-  raw_results = _wiki_request(search_params)
+  raw_results = _wiki_request(search_params, api_url)
 
   if 'error' in raw_results:
     if raw_results['error']['info'] in ('HTTP request timed out.', 'Pool queue is full'):
@@ -120,64 +110,23 @@ def search(query, results=10, suggestion=False):
 
 
 @cache
-def geosearch(latitude, longitude, title=None, results=10, radius=1000):
+def suggest(site, query, lang=None):
   '''
-  Do a wikipedia geo search for `latitude` and `longitude`
-  using HTTP API described in http://www.mediawiki.org/wiki/Extension:GeoData
-
-  Arguments:
-
-  * latitude (float or decimal.Decimal)
-  * longitude (float or decimal.Decimal)
-
-  Keyword arguments:
-
-  * title - The title of an article to search for
-  * results - the maximum number of results returned
-  * radius - Search radius in meters. The value must be between 10 and 10000
-  '''
-
-  search_params = {
-    'list': 'geosearch',
-    'gsradius': radius,
-    'gscoord': '{0}|{1}'.format(latitude, longitude),
-    'gslimit': results
-  }
-  if title:
-    search_params['titles'] = title
-
-  raw_results = _wiki_request(search_params)
-
-  if 'error' in raw_results:
-    if raw_results['error']['info'] in ('HTTP request timed out.', 'Pool queue is full'):
-      raise HTTPTimeoutError('{0}|{1}'.format(latitude, longitude))
-    else:
-      raise WikipediaException(raw_results['error']['info'])
-
-  search_pages = raw_results['query'].get('pages', None)
-  if search_pages:
-    search_results = (v['title'] for k, v in search_pages.items() if k != '-1')
-  else:
-    search_results = (d['title'] for d in raw_results['query']['geosearch'])
-
-  return list(search_results)
-
-
-@cache
-def suggest(query):
-  '''
-  Get a Wikipedia search suggestion for `query`.
+  Get a search suggestion for `query` on gamepedia site `site`
+  in a certain language 'lang' (which should be a prefix).
   Returns a string or None if no suggestion was found.
   '''
 
+  api_url = format_url(site, lang)
   search_params = {
     'list': 'search',
     'srinfo': 'suggestion',
     'srprop': '',
+    'site': site,
   }
   search_params['srsearch'] = query
 
-  raw_result = _wiki_request(search_params)
+  raw_result = self._wiki_request(search_params, api_url)
 
   if raw_result['query'].get('searchinfo'):
     return raw_result['query']['searchinfo']['suggestion']
@@ -185,16 +134,19 @@ def suggest(query):
   return None
 
 
-def random(pages=1):
+def random(site, pages=1, lang=None):
   '''
-  Get a list of random Wikipedia article titles.
+  Get a list of random article titles from the gamepedia `site` in `lang`.
 
-  .. note:: Random only gets articles from namespace 0, meaning no Category, User talk, or other meta-Wikipedia pages.
+  .. note:: Random only gets articles from namespace 0, meaning no Category,
+            User talk, or other meta-Wikipedia pages.
 
   Keyword arguments:
 
   * pages - the number of random pages returned (max of 10)
+  * lang - The prefix for the language the site to be in
   '''
+  api_url = format_url(site, lang)
   #http://en.wikipedia.org/w/api.php?action=query&list=random&rnlimit=5000&format=jsonfm
   query_params = {
     'list': 'random',
@@ -202,7 +154,7 @@ def random(pages=1):
     'rnlimit': pages,
   }
 
-  request = _wiki_request(query_params)
+  request = self._wiki_request(query_params, api_url)
   titles = [page['title'] for page in request['query']['random']]
 
   if len(titles) == 1:
@@ -212,9 +164,10 @@ def random(pages=1):
 
 
 @cache
-def summary(title, sentences=0, chars=0, auto_suggest=True, redirect=True):
+def summary(site, title, lang=None, sentences=0, chars=0,
+           auto_suggest=True, redirect=True):
   '''
-  Plain text summary of the page.
+  Plain text summary of the page on the gamepedia site `site`.
 
   .. note:: This is a convenience wrapper - auto_suggest and redirect are enabled by default
 
@@ -224,8 +177,10 @@ def summary(title, sentences=0, chars=0, auto_suggest=True, redirect=True):
   * chars - if set, return only the first `chars` characters (actual text returned may be slightly longer).
   * auto_suggest - let Wikipedia find a valid page title for the query
   * redirect - allow redirection without raising RedirectError
+  * lang - The prefix for the language the site to be in
   '''
 
+  api_url = format_url(site, lang)
   # use auto_suggest and redirect to get the correct article
   # also, use page's error checking to raise DisambiguationError if necessary
   page_info = page(title, auto_suggest=auto_suggest, redirect=redirect)
@@ -233,9 +188,9 @@ def summary(title, sentences=0, chars=0, auto_suggest=True, redirect=True):
   pageid = page_info.pageid
 
   query_params = {
-    'prop': 'extracts',
+    'prop': 'revisions',
     'explaintext': '',
-    'titles': title
+    'titles': title,
   }
 
   if sentences:
@@ -245,19 +200,21 @@ def summary(title, sentences=0, chars=0, auto_suggest=True, redirect=True):
   else:
     query_params['exintro'] = ''
 
-  request = _wiki_request(query_params)
-  summary = request['query']['pages'][pageid]['extract']
+  request = self._wiki_request(query_params, api_url)
+  summary = request['query']['pages'][pageid]['revisions']
 
   return summary
 
 
-def page(title=None, pageid=None, auto_suggest=True, redirect=True, preload=False):
+def page(site, title=None, pageid=None, lang=None, auto_suggest=True,
+        redirect=True, preload=False):
   '''
   Get a WikipediaPage object for the page with title `title` or the pageid
-  `pageid` (mutually exclusive).
+  `pageid` (mutually exclusive) from the gamepedia site.
 
   Keyword arguments:
 
+  * site - The gamepedia site the article is on
   * title - the title of the page to load
   * pageid - the numeric pageid of the page to load
   * auto_suggest - let Wikipedia find a valid page title for the query
@@ -267,15 +224,15 @@ def page(title=None, pageid=None, auto_suggest=True, redirect=True, preload=Fals
 
   if title is not None:
     if auto_suggest:
-      results, suggestion = search(title, results=1, suggestion=True)
+      results, suggestion = search(site, title, results=1, suggestion=True)
       try:
         title = suggestion or results[0]
       except IndexError:
         # if there is no suggestion or search results, the page doesn't exist
         raise PageError(title)
-    return WikipediaPage(title, redirect=redirect, preload=preload)
+    return WikipediaPage(site, title, lang=lang, redirect=redirect, preload=preload)
   elif pageid is not None:
-    return WikipediaPage(pageid=pageid, preload=preload)
+    return WikipediaPage(site, pageid=pageid, lang=lang, preload=preload)
   else:
     raise ValueError("Either a title or a pageid must be specified")
 
@@ -287,7 +244,11 @@ class WikipediaPage(object):
   Uses property methods to filter data from the raw HTML.
   '''
 
-  def __init__(self, title=None, pageid=None, redirect=True, preload=False, original_title=''):
+  def __init__(self, site, title=None, pageid=None, lang=None, redirect=True,
+              preload=False, original_title=''):
+    self.site = site
+    if lang is not None:
+      self.lang = lang
     if title is not None:
       self.title = title
       self.original_title = original_title or title
@@ -333,7 +294,7 @@ class WikipediaPage(object):
     else:
       query_params['pageids'] = self.pageid
 
-    request = _wiki_request(query_params)
+    request = self._wiki_request(query_params)
 
     query = request['query']
     pageid = list(query['pages'].keys())[0]
@@ -383,7 +344,7 @@ class WikipediaPage(object):
         query_params['pageids'] = self.pageid
       else:
         query_params['titles'] = self.title
-      request = _wiki_request(query_params)
+      request = self._wiki_request(query_params)
       html = request['query']['pages'][pageid]['revisions'][0]['*']
 
       lis = BeautifulSoup(html).find_all('li')
@@ -410,7 +371,7 @@ class WikipediaPage(object):
       params = query_params.copy()
       params.update(last_continue)
 
-      request = _wiki_request(params)
+      request = self._wiki_request(params)
 
       if 'query' not in request:
         break
@@ -427,6 +388,13 @@ class WikipediaPage(object):
         break
 
       last_continue = request['continue']
+
+  def _wiki_request(self, params):
+    '''
+    Wrapper for _wiki_request, automatically sends the correct api_url
+    for the object's request
+    '''
+    return _wiki_request(params, self.api_url)
 
   @property
   def __title_query_param(self):
@@ -451,10 +419,56 @@ class WikipediaPage(object):
         'titles': self.title
       }
 
-      request = _wiki_request(query_params)
+      request = self._wiki_request(query_params)
       self._html = request['query']['pages'][self.pageid]['revisions'][0]['*']
 
     return self._html
+
+  @property
+  def lang(self):
+    '''
+    The language prefix that the API uses requests the article be in a certain
+    language. The prefix must be in the following list:
+    <http://meta.wikimedia.org/wiki/List_of_Wikipedias>`_.
+    '''
+    if not getattr(self, '_lang', False):
+        return None
+    return self._lang
+
+  @lang.setter
+  def lang(self, lang):
+    '''
+    Change the language of the API being requested.
+    Set `prefix` to one of the two letter prefixes found on the
+    `list of all Wikipedias <http://meta.wikimedia.org/wiki/List_of_Wikipedias>`_.
+
+    After setting the language, the cache for ``search``, ``suggest``, and ``summary`` will be cleared.
+
+    .. note:: Make sure you search for page titles in the language that you have set.
+    '''
+    self._lang = lang
+    for cached_func in (search, suggest, summary):
+      cached_func.clear_cache()
+
+  @property
+  def site(self):
+    '''
+    The particular gamepedia we are requesting the data from.
+    The site must be one of the following wikis: <http://www.gamepedia.com/wikis>
+    '''
+    return self._site
+
+  @site.setter
+  def site(self, site):
+    '''
+    Sets what gamepedia site the API will gather data from.
+    Must be in the following list: <http://www.gamepedia.com/wikis>
+    '''
+    self._site = site
+
+  @property
+  def api_url(self):
+    return format_url(self.site, self.lang)
 
   @property
   def content(self):
@@ -464,18 +478,17 @@ class WikipediaPage(object):
 
     if not getattr(self, '_content', False):
       query_params = {
-        'prop': 'extracts|revisions',
-        'explaintext': '',
-        'rvprop': 'ids'
+        'prop': 'revisions',
+        'rvprop': 'content'
       }
       if not getattr(self, 'title', None) is None:
          query_params['titles'] = self.title
       else:
          query_params['pageids'] = self.pageid
-      request = _wiki_request(query_params)
-      self._content     = request['query']['pages'][self.pageid]['extract']
-      self._revision_id = request['query']['pages'][self.pageid]['revisions'][0]['revid']
-      self._parent_id   = request['query']['pages'][self.pageid]['revisions'][0]['parentid']
+      request = self._wiki_request(query_params)
+      self._content     = request['query']['pages'][self.pageid]['revisions'][0]["*"]
+      #self._revision_id = request['query']['pages'][self.pageid]['revisions'][0]['revid']
+      #self._parent_id   = request['query']['pages'][self.pageid]['revisions'][0]['parentid']
 
     return self._content
 
@@ -518,18 +531,16 @@ class WikipediaPage(object):
 
     if not getattr(self, '_summary', False):
       query_params = {
-        'prop': 'extracts',
-        'explaintext': '',
-        'exintro': '',
+        'prop': 'revisions',
+        'rvprop': 'content',
       }
       if not getattr(self, 'title', None) is None:
          query_params['titles'] = self.title
       else:
          query_params['pageids'] = self.pageid
 
-      request = _wiki_request(query_params)
-      self._summary = request['query']['pages'][self.pageid]['extract']
-
+      request = self._wiki_request(query_params)
+      self._summary = request['query']['pages'][self.pageid]['revisions'][0]["*"]
     return self._summary
 
   @property
@@ -564,7 +575,7 @@ class WikipediaPage(object):
         'titles': self.title,
       }
 
-      request = _wiki_request(query_params)
+      request = self._wiki_request(query_params)
 
       if 'query' in request:
         coordinates = request['query']['pages'][self.pageid]['coordinates']
@@ -628,7 +639,7 @@ class WikipediaPage(object):
       }
       query_params.update(self.__title_query_param)
 
-      request = _wiki_request(query_params)
+      request = self._wiki_request(query_params)
       self._sections = [section['line'] for section in request['parse']['sections']]
 
     return self._sections
@@ -670,7 +681,8 @@ def languages():
   Returns: dict of <prefix>: <local_lang_name> pairs. To get just a list of prefixes,
   use `wikipedia.languages().keys()`.
   '''
-  response = _wiki_request({
+  response = self._wiki_request({
+    'site': '',
     'meta': 'siteinfo',
     'siprop': 'languages'
   })
@@ -692,9 +704,18 @@ def donate():
   webbrowser.open('https://donate.wikimedia.org/w/index.php?title=Special:FundraiserLandingPage', new=2)
 
 
-def _wiki_request(params):
+def format_url(site, lang=None):
   '''
-  Make a request to the Wikipedia API using the given search parameters.
+  Formats the API url to point to a certain Gamepedia site. If a lang prefix
+  is given, then that is used as the language.
+  '''
+  global API_URL
+  return API_URL.format(site=site, lang="-" + lang if lang else "")
+
+
+def _wiki_request(params, api_url):
+  '''
+  Make a request to the Gamepedia API using the given search parameters.
   Returns a parsed dict of the JSON response.
   '''
   global RATE_LIMIT_LAST_CALL
@@ -717,7 +738,7 @@ def _wiki_request(params):
     wait_time = (RATE_LIMIT_LAST_CALL + RATE_LIMIT_MIN_WAIT) - datetime.now()
     time.sleep(int(wait_time.total_seconds()))
 
-  r = requests.get(API_URL, params=params, headers=headers)
+  r = requests.get(api_url, params=params, headers=headers)
 
   if RATE_LIMIT:
     RATE_LIMIT_LAST_CALL = datetime.now()

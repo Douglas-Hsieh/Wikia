@@ -183,25 +183,19 @@ def summary(site, title, lang=None, sentences=0, chars=0,
   api_url = format_url(site, lang)
   # use auto_suggest and redirect to get the correct article
   # also, use page's error checking to raise DisambiguationError if necessary
-  page_info = page(title, auto_suggest=auto_suggest, redirect=redirect)
+  page_info = page(site, title, auto_suggest=auto_suggest, redirect=redirect)
   title = page_info.title
   pageid = page_info.pageid
 
   query_params = {
     'prop': 'revisions',
-    'explaintext': '',
+    'rvprop': 'content',
     'titles': title,
   }
 
-  if sentences:
-    query_params['exsentences'] = sentences
-  elif chars:
-    query_params['exchars'] = chars
-  else:
-    query_params['exintro'] = ''
 
-  request = self._wiki_request(query_params, api_url)
-  summary = request['query']['pages'][pageid]['revisions']
+  request = _wiki_request(query_params, api_url)
+  summary = request['query']['pages'][pageid]['revisions'][0]["*"]
 
   return summary
 

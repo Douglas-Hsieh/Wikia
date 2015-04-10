@@ -126,7 +126,7 @@ def suggest(site, query, lang=None):
   }
   search_params['srsearch'] = query
 
-  raw_result = self._wiki_request(search_params, api_url)
+  raw_result = _wiki_request(search_params, api_url)
 
   if raw_result['query'].get('searchinfo'):
     return raw_result['query']['searchinfo']['suggestion']
@@ -154,7 +154,7 @@ def random(site, pages=1, lang=None):
     'rnlimit': pages,
   }
 
-  request = self._wiki_request(query_params, api_url)
+  request = _wiki_request(query_params, api_url)
   titles = [page['title'] for page in request['query']['random']]
 
   if len(titles) == 1:

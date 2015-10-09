@@ -14,14 +14,13 @@ wikia data, not getting it.
 .. code:: python
 
   >>> import wikia
-  >>> wikia.set_wiki("Runescape")
-  >>> print wikia.summary("Banshee")
+  >>> print wikia.summary("Runescape", "Banshee")
   # Banshees are Slayer monsters that require level 15 Slayer to kill. They frequently drop 13 noted pure essence, making them an alternative source of essence. Additionally, banshees tend to frequently drop many different types of herbs. Mighty banshees are a higher-levelled alternative, if this is given as your Slayer assignment.
 
-  >>> wikia.search("Forest")
+  >>> wikia.search("Runescape", "Forest")
   # [u'Forest', u'Forester', u'Freaky Forester', u'Forester\'s Arms', u'Talking Forest', u'Jungle Forester', u'Dense forest', u'Forester hat', u'Ogre forester hat', u'Forester (Burgh de Rott Ramble)']
 
-  >>> drakan = wikia.page("Castle Drakan")
+  >>> drakan = wikia.page("Runescape", "Castle Drakan")
   >>> drakan.title
   # u'Castle Drakan'
   >>> drakan.url
@@ -30,7 +29,7 @@ wikia data, not getting it.
   # u'Castle Drakan is the home of Lord Drakan, the vampyre lord of Morytania. Found just north of Meiyerditch, it looms over the Sanguinesti region'...
 
   >>> wikia.set_lang("nl") # Dutch
-  >>> wikia.summary("Runes", sentences=1)
+  >>> wikia.summary("Runescape", "Runes", sentences=1)
   # Runes, of Magische runes zijn kleine gewichtloze steentjes waarmee spelers een spreuk kunnen uitvoeren.
 
 Note: this library was designed for ease of use and simplicity, not for advanced use.

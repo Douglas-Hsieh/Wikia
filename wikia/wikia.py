@@ -471,6 +471,35 @@ class WikiaPage(object):
                                         if segment['type'] == "paragraph")
     return section
 
+
+  def section_lists(self, section_title):
+    '''
+    Get the plain text content of a section from `self.sections`.
+    Returns None if `section_title` isn't found, otherwise returns a whitespace stripped string.
+
+    This is a convenience method that wraps self.content.
+
+    .. warning:: Calling `section` on a section that has subheadings will NOT return
+           the full text of all of the subsections. It only gets the text between
+           `section_title` and the next subheading, which is often empty.
+    '''
+    if section_title not in self.sections:
+      return None
+
+    query_params = {
+      'action': "Articles/AsSimpleJson?/",
+      'id': self.pageid,
+      'sub_wikia': self.sub_wikia,
+      'lang': LANG
+    }
+
+    request = _wiki_request(query_params)
+    section = [section for section in request['sections'] if section['title'] == section_title][0]
+    lists = [list['elements'] for list in section['content'] if list['type'] == 'list']
+    list = [item['text'] for items in lists for item in items]
+    return list
+
+
 @cache
 def languages():
   '''

@@ -395,7 +395,10 @@ class WikiaPage(object):
           # Remove the /revision/ fluff after the image url
           image = image.partition("/revision/")[0]
           image_type = mimetypes.guess_type(image)[0]
-          image_type = "." + image_type.split("/")[-1]
+          if image_type is None:
+            image_type = "." + image_type.split("/")[-1]
+          else:
+            image_type = ".png" # in case mimetypes.guess cant find it it will return None
           # JPEG has a special case, where sometimes it is written as "jpg"
           if image_type == ".jpeg" and image_type not in image:
             image_type = ".jpg"

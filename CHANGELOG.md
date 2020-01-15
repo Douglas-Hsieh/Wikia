@@ -1,5 +1,8 @@
 # Changelog
 
+### Version 1.4.4
+* Fixed a bug with non-existant references and sections property being accessed
+
 ## Current
 ### Version 1.4.3
 * Fixed a bug with the images, where some of them would not be retrieved properly

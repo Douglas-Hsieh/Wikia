@@ -50,9 +50,6 @@ Documentation
 
 Read the docs at http://api.wikia.com/wiki/Wikia_API_Wiki.
 
--  `Quickstart http://api.wikia.com/wiki/Quick_Start`__
--  `Full API http://www.wikia.com/api/v1/`__
-
 To run tests, clone the `respository on GitHub <https://github.com/timidger/Wikia>`__, then run:
 
 ::

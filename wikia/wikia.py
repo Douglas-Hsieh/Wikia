@@ -212,7 +212,7 @@ class WikiaPage(object):
         raise WikiaError("Could not locate page \"{}\" in subwikia \"{}\"".format(title or pageid,
                                                                            sub_wikia))
     if preload:
-      for prop in ('content', 'summary', 'images', 'references', 'links', 'sections'):
+      for prop in ('content', 'summary', 'images', 'sections'):
         getattr(self, prop)
 
   def __repr__(self):
